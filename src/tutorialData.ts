@@ -25,7 +25,53 @@ const codeByPattern: Record<VisualKind, string[]> = {
   stack: ['for (const item of input) {', '  while (stack 需要彈出) stack.pop()', '  stack.push(目前狀態)', '  更新答案或檢查 top', '}']
 }
 
+function arrayItemsFor(raw: RawTutorial): Array<number | string> {
+  if (raw.id.includes('stock')) return [7, 1, 5, 3, 6, 4]
+  if (raw.id.includes('duplicate')) return [1, 2, 3, 1]
+  if (raw.id.includes('product')) return [1, 2, 3, 4]
+  if (raw.id.includes('maximum-subarray')) return [-2, 1, -3, 4, -1, 2, 1]
+  if (raw.id.includes('rotated')) return [4, 5, 6, 7, 0, 1, 2]
+  if (raw.id.includes('coin')) return [1, 2, 5, 11]
+  if (raw.id.includes('house')) return [2, 7, 9, 3, 1]
+  if (raw.id.includes('substring')) return ['a', 'b', 'c', 'a', 'b', 'c']
+  if (raw.id.includes('matrix') || raw.tags.includes('Matrix')) return ['r0c0', 'r0c1', 'r1c0', 'r1c1']
+  const seed = [...raw.id].reduce((sum, ch) => sum + ch.charCodeAt(0), 0)
+  return [0, 1, 2, 3].map(i => ((seed + i * 3) % 13) - 3)
+}
+
+function specificSteps(raw: RawTutorial): Step[] | null {
+  if (raw.id === 'three-sum') return [
+    { title: '排序並固定 i', explain: 'nums 排序後固定 i=0，也就是 -4；left 指向 -1，right 指向 2。', codeLine: codeByPattern.array[1], variables: { i: 0, left: 1, right: 5, sum: -3, target: 0 }, visual: { kind: 'array', items: [-4, -1, -1, 0, 1, 2], pointers: [{ label: 'i', index: 0, color: '#18E299' }, { label: 'L', index: 1, color: '#a78bfa' }, { label: 'R', index: 5, color: '#fbbf24' }], notes: ['sum=-4+(-1)+2=-3，太小，left 右移'] } },
+    { title: 'left 右移', explain: 'sum 太小，表示需要更大的值，所以 left 從 index 1 移到 index 2，再繼續比較。', codeLine: codeByPattern.array[2], variables: { i: 0, left: 2, right: 5, sum: -3, action: 'left++' }, visual: { kind: 'array', items: [-4, -1, -1, 0, 1, 2], pointers: [{ label: 'i', index: 0, color: '#18E299' }, { label: 'L', index: 2, color: '#a78bfa' }, { label: 'R', index: 5, color: '#fbbf24' }], notes: ['重複 -1 仍會被處理；命中後才跳過重複'] } },
+    { title: '換下一個 i 找到答案', explain: 'i 移到 -1 後，left=0、right=2，sum=1，right 左移後得到 [-1,-1,2]。', codeLine: codeByPattern.array[3], variables: { i: 1, left: 2, right: 5, answer: '[-1,-1,2]' }, visual: { kind: 'array', items: [-4, -1, -1, 0, 1, 2], pointers: [{ label: 'i', index: 1, color: '#18E299' }, { label: 'L', index: 2, color: '#a78bfa' }, { label: 'R', index: 5, color: '#fbbf24' }], notes: ['命中後 left/right 同時移動並跳過重複'] } }
+  ]
+  if (raw.id === 'container-with-most-water') return [
+    { title: '兩端開始', explain: 'left 在高度 1，right 在高度 7，寬度 8，面積由較短邊 1 決定。', codeLine: codeByPattern.array[1], variables: { left: 0, right: 8, width: 8, minHeight: 1, area: 8 }, visual: { kind: 'array', items: [1, 8, 6, 2, 5, 4, 8, 3, 7], pointers: [{ label: 'L', index: 0, color: '#18E299' }, { label: 'R', index: 8, color: '#fbbf24' }], notes: ['area = min(1,7) * 8 = 8；移動短邊 left'] } },
+    { title: '移動較短邊', explain: 'left 移到高度 8，right 仍在 7，面積變成 min(8,7)*7=49。', codeLine: codeByPattern.array[2], variables: { left: 1, right: 8, width: 7, minHeight: 7, best: 49 }, visual: { kind: 'array', items: [1, 8, 6, 2, 5, 4, 8, 3, 7], pointers: [{ label: 'L', index: 1, color: '#18E299' }, { label: 'R', index: 8, color: '#fbbf24' }], notes: ['best 更新為 49；接著移動 right'] } },
+    { title: '收斂', explain: '每次只移動較短的板，因為寬度只會變小，保留短板不可能得到更大面積。', codeLine: codeByPattern.array[3], variables: { best: 49, rule: 'move shorter side' }, visual: { kind: 'array', items: [1, 8, 6, 2, 5, 4, 8, 3, 7], pointers: [{ label: 'best L', index: 1, color: '#18E299' }, { label: 'best R', index: 8, color: '#fbbf24' }], notes: ['答案 49 來自 index 1 與 8'] } }
+  ]
+  if (raw.id === 'number-of-islands') return [
+    { title: '遇到第一塊陸地', explain: '掃描 grid，遇到第一個 1，島嶼數 +1，並從這格開始 DFS。', codeLine: codeByPattern.array[1], variables: { row: 0, col: 0, islands: 1, current: '1' }, visual: { kind: 'array', items: ['1', '1', '0', '1', '0'], pointers: [{ label: 'DFS', index: 0, color: '#18E299' }], notes: ['這裡用一列壓縮圖表示 grid 的目前掃描列'] } },
+    { title: 'DFS 沉島', explain: '把相連的 1 標記成 visited/0，避免之後重複計算同一座島。', codeLine: codeByPattern.array[2], variables: { visited: '(0,0),(0,1)', islands: 1, action: 'mark 1 -> 0' }, visual: { kind: 'array', items: ['0', '0', '0', '1', '0'], pointers: [{ label: 'visited', index: 0, color: '#a78bfa' }, { label: 'visited', index: 1, color: '#a78bfa' }], notes: ['新增、移除不是改答案，而是標記已走過的格子'] } },
+    { title: '繼續掃描下一座島', explain: '前面的島已沉完，後面再遇到 1 才代表新的島。', codeLine: codeByPattern.array[3], variables: { row: 0, col: 3, islands: 2 }, visual: { kind: 'array', items: ['0', '0', '0', '1', '0'], pointers: [{ label: 'new island', index: 3, color: '#18E299' }], notes: ['島嶼題的圖應該跟 DFS 走訪同步變化'] } }
+  ]
+  if (raw.id === 'invert-binary-tree') return [
+    { title: 'current = 4', explain: '目前在 root=4，左子樹是 2，右子樹是 7。', codeLine: codeByPattern.tree[0], variables: { current: 4, left: 2, right: 7 }, visual: { kind: 'tree', nodes: [{ id: '4', value: 4, x: 50, y: 8, left: '2', right: '7', highlight: true }, { id: '2', value: 2, x: 28, y: 35, left: '1', right: '3' }, { id: '7', value: 7, x: 72, y: 35, left: '6', right: '9' }, { id: '1', value: 1, x: 18, y: 68 }, { id: '3', value: 3, x: 38, y: 68 }, { id: '6', value: 6, x: 62, y: 68 }, { id: '9', value: 9, x: 82, y: 68 }], pointers: [{ label: 'current', node: '4' }], notes: ['交換 4.left 與 4.right，不是改節點值'] } },
+    { title: '交換 root 左右', explain: '4.left 改指向 7，4.right 改指向 2，圖形位置同步左右對調。', codeLine: codeByPattern.tree[4], variables: { current: 4, left: 7, right: 2 }, visual: { kind: 'tree', nodes: [{ id: '4', value: 4, x: 50, y: 8, left: '7', right: '2', highlight: true }, { id: '7', value: 7, x: 28, y: 35, left: '6', right: '9' }, { id: '2', value: 2, x: 72, y: 35, left: '1', right: '3' }, { id: '6', value: 6, x: 18, y: 68 }, { id: '9', value: 9, x: 38, y: 68 }, { id: '1', value: 1, x: 62, y: 68 }, { id: '3', value: 3, x: 82, y: 68 }], pointers: [{ label: 'current', node: '4' }], notes: ['指標換邊，子樹整包跟著換邊'] } },
+    { title: '遞迴處理子樹', explain: '接著 current 移到 7 與 2，各自重複交換左右孩子。', codeLine: codeByPattern.tree[2], variables: { nextCurrent: 7, action: 'swap children recursively' }, visual: { kind: 'tree', nodes: [{ id: '4', value: 4, x: 50, y: 8, left: '7', right: '2' }, { id: '7', value: 7, x: 28, y: 35, left: '9', right: '6', highlight: true }, { id: '2', value: 2, x: 72, y: 35, left: '3', right: '1' }, { id: '9', value: 9, x: 18, y: 68 }, { id: '6', value: 6, x: 38, y: 68 }, { id: '3', value: 3, x: 62, y: 68 }, { id: '1', value: 1, x: 82, y: 68 }], pointers: [{ label: 'current', node: '7' }], notes: ['每個節點的圖都會改，不是同一張示意圖'] } }
+  ]
+  if (raw.id === 'reverse-linked-list') return [
+    { title: '保存 next', explain: 'cur 在 1，先保存 next=2，否則反轉 cur.next 後會找不到後面的鏈表。', codeLine: codeByPattern['linked-list'][2], variables: { prev: null, cur: 1, next: 2 }, visual: { kind: 'linked-list', links: [{ id: '1', value: 1, next: '2', highlight: true }, { id: '2', value: 2, next: '3' }, { id: '3', value: 3, next: null }], pointers: [{ label: 'cur', node: '1' }, { label: 'next', node: '2' }], notes: ['先保存 next，再改 cur.next'] } },
+    { title: '反轉箭頭', explain: '執行 cur.next = prev；箭頭從向右改成向左。', codeLine: codeByPattern['linked-list'][2], variables: { prev: null, cur: 1, next: 2, changed: '1.next = null' }, visual: { kind: 'linked-list', links: [{ id: '1', value: 1, next: null, highlight: true }, { id: '2', value: 2, next: '3' }, { id: '3', value: 3, next: null }], pointers: [{ label: 'prev<-cur', node: '1' }, { label: 'next', node: '2' }], notes: ['cur.next = prev；箭頭從向右改成向左'] } },
+    { title: 'prev/cur 前進', explain: 'prev 移到 1，cur 移到 2，下一輪會把 2 指回 1。', codeLine: codeByPattern['linked-list'][3], variables: { prev: 1, cur: 2, next: 3 }, visual: { kind: 'linked-list', links: [{ id: '2', value: 2, next: '1', highlight: true }, { id: '1', value: 1, next: null }, { id: '3', value: 3, next: null }], pointers: [{ label: 'cur', node: '2' }, { label: 'prev', node: '1' }], notes: ['下一步會形成 2 → 1 → null'] } }
+  ]
+  return null
+}
+
 function stepsFor(raw: RawTutorial): Step[] {
+  const specific = specificSteps(raw)
+  if (specific) return specific
+  const items = arrayItemsFor(raw)
   if (raw.pattern === 'linked-list') return [
     { title: '建立白板狀態', explain: `${raw.title} 先把 dummy、prev、cur 畫出來，確認每個指標目前指向哪個節點。`, codeLine: codeByPattern['linked-list'][1], variables: { prev: 'dummy', cur: 'head', operation: raw.operation }, visual: { kind: 'linked-list', links: [{ id: 'd', value: 'dummy', next: 'a' }, { id: 'a', value: 1, next: 'b', highlight: true }, { id: 'b', value: 2, next: 'c' }, { id: 'c', value: 3, next: null }], pointers: [{ label: 'prev', node: 'd' }, { label: 'cur', node: 'a' }], notes: ['先畫節點，再畫指標；不要直接改值。'] } },
     { title: '改變連線', explain: `執行核心動作：${raw.operation}。白板上用箭頭重接 next，先保存會被斷開的節點。`, codeLine: codeByPattern['linked-list'][2], variables: { savedNext: 'cur.next', changed: true, focus: raw.focus }, visual: { kind: 'linked-list', links: [{ id: 'd', value: 'dummy', next: 'b', faded: true }, { id: 'b', value: 2, next: 'a', highlight: true }, { id: 'a', value: 1, next: 'c' }, { id: 'c', value: 3, next: null }], pointers: [{ label: 'prev', node: 'd' }, { label: 'cur', node: 'b' }], notes: ['箭頭變化是本題 dry run 的核心。'] } },
@@ -42,9 +88,9 @@ function stepsFor(raw: RawTutorial): Step[] {
     { title: '輸出答案', explain: '掃描結束後，stack 或累積答案給出最終結果。', codeLine: codeByPattern.stack[3], variables: { done: true, answer: '依題目定義' }, visual: { kind: 'stack', stack: ['最終狀態'], notes: ['檢查是否需要清空 stack 或保留 top。'] } }
   ]
   return [
-    { title: '初始化窗口 / 狀態', explain: `${raw.title} 先定義指標、答案與輔助資料結構。`, codeLine: codeByPattern.array[0], variables: { left: 0, right: 0, answer: '初始值', focus: raw.focus }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'L', index: 0, color: '#18E299' }, { label: 'R', index: 0, color: '#a78bfa' }], notes: ['先確認不變量：目前狀態代表什麼？'] } },
-    { title: '移動指標並更新狀態', explain: `依照條件執行：${raw.operation}。每次移動後同步更新變數表。`, codeLine: codeByPattern.array[2], variables: { left: 0, right: 2, current: 'nums[right]', answer: '更新中' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'L', index: 0, color: '#18E299' }, { label: 'R', index: 2, color: '#a78bfa' }], notes: ['白板 dry run 只展示關鍵狀態轉移。'] } },
-    { title: '收斂答案', explain: '當掃描完成或條件命中，回傳目前最佳答案。', codeLine: codeByPattern.array[3], variables: { done: true, answer: '最終結果' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'answer', index: 1, color: '#18E299' }, { label: 'answer', index: 2, color: '#18E299' }], notes: ['確認邊界：空陣列、單元素、重複值。'] } }
+    { title: '初始化窗口 / 狀態', explain: `${raw.title} 先定義指標、答案與輔助資料結構。`, codeLine: codeByPattern.array[0], variables: { left: 0, right: 0, answer: '初始值', focus: raw.focus }, visual: { kind: 'array', items: items, pointers: [{ label: 'L', index: 0, color: '#18E299' }, { label: 'R', index: 0, color: '#a78bfa' }], notes: ['先確認不變量：目前狀態代表什麼？'] } },
+    { title: '移動指標並更新狀態', explain: `依照條件執行：${raw.operation}。每次移動後同步更新變數表。`, codeLine: codeByPattern.array[2], variables: { left: 0, right: 2, current: 'nums[right]', answer: '更新中' }, visual: { kind: 'array', items: items, pointers: [{ label: 'L', index: 0, color: '#18E299' }, { label: 'R', index: 2, color: '#a78bfa' }], notes: ['白板 dry run 只展示關鍵狀態轉移。'] } },
+    { title: '收斂答案', explain: '當掃描完成或條件命中，回傳目前最佳答案。', codeLine: codeByPattern.array[3], variables: { done: true, answer: '最終結果' }, visual: { kind: 'array', items: items, pointers: [{ label: 'answer', index: 1, color: '#18E299' }, { label: 'answer', index: 2, color: '#18E299' }], notes: ['確認邊界：空陣列、單元素、重複值。'] } }
   ]
 }
 
