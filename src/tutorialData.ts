@@ -19,10 +19,10 @@ export type Tutorial = { id: string; title: string; difficulty: 'Easy' | 'Medium
 type RawTutorial = Omit<Tutorial, 'tags' | 'idea' | 'code' | 'steps' | 'complexity'> & { tags: string[]; pattern: VisualKind; focus: string; operation: string }
 
 const codeByPattern: Record<VisualKind, string[]> = {
-  array: ['初始化答案與輔助結構', 'for / while 掃描目前元素或窗口', '依照條件更新指標、狀態或答案', '回傳最終結果'],
-  'linked-list': ['ListNode dummy(0);', 'ListNode* prev = &dummy; ListNode* cur = head;', '調整 next 指標，避免遺失後續節點', '移動 prev / cur 到下一個白板狀態', 'return dummy.next ? dummy.next : head;'],
-  tree: ['int dfs(TreeNode* node) {', '  if (node == nullptr) return base;', '  int left = dfs(node->left);', '  int right = dfs(node->right);', '  return combine(node, left, right);', '}'],
-  stack: ['for (auto item : input) {', '  while (!st.empty() && 需要彈出) st.pop();', '  st.push(目前狀態);', '  更新答案或檢查 st.top();', '}']
+  array: ['vector<int> sample = 建立本題測資();', 'int answer = 初始化答案;', 'for (int i = 0; i < sample.size(); i++) {', '  int current = sample[i];', '  依題意更新指標、狀態或 DP 表;', '}', 'return answer;'],
+  'linked-list': ['ListNode dummy(0);', 'ListNode* prev = &dummy; ListNode* cur = head;', 'ListNode* next = cur ? cur->next : nullptr;', '依題意重接 next 指標，避免遺失後續節點;', 'prev = cur; cur = next;', 'return dummy.next ? dummy.next : head;'],
+  tree: ['int dfs(TreeNode* node) {', '  if (node == nullptr) return base;', '  int left = dfs(node->left);', '  int right = dfs(node->right);', '  int result = combine(node->val, left, right);', '  return result;', '}'],
+  stack: ['for (auto item : input) {', '  while (!st.empty() && 需要彈出) st.pop();', '  st.push(目前狀態);', '  answer = 更新答案或檢查 st.top();', '}', 'return answer;']
 }
 
 function arrayItemsFor(raw: RawTutorial): Array<number | string> {
@@ -41,14 +41,14 @@ function arrayItemsFor(raw: RawTutorial): Array<number | string> {
 
 function specificSteps(raw: RawTutorial): Step[] | null {
   if (raw.id === 'two-sum') return [
-    { title: 'LeetCode 測資與初始化', explain: '使用 LeetCode 範例 nums=[2,7,11,15], target=9。unordered_map 先是空的，還沒進入迴圈。', codeLine: 'unordered_map<int, int> seen;', variables: { nums: '[2,7,11,15]', target: 9, i: '-', nums_i: '-', need: '-', map: '{}', answer: '-' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [], notes: ['測資固定：nums=[2,7,11,15], target=9', 'seen 記錄「值 → 索引」'] } },
+    { title: 'LeetCode 測資與初始化', explain: '使用 LeetCode 範例 nums=[2,7,11,15], target=9。unordered_map 先是空的，還沒進入迴圈。', codeLine: '  unordered_map<int, int> seen;', variables: { nums: '[2,7,11,15]', target: 9, i: '-', nums_i: '-', need: '-', map: '{}', answer: '-' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [], notes: ['測資固定：nums=[2,7,11,15], target=9', 'seen 記錄「值 → 索引」'] } },
     { title: 'i=0，讀 nums[0]', explain: '迴圈開始，i 指向 index 0，目前值 nums[i]=2。', codeLine: '  for (int i = 0; i < nums.size(); i++) {', variables: { nums: '[2,7,11,15]', target: 9, i: 0, nums_i: 2, need: '-', map: '{}', answer: '-' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'i', index: 0, color: '#18E299' }], notes: ['目前處理 nums[0] = 2'] } },
     { title: '計算 need=7', explain: '照程式碼計算 need = target - nums[i] = 9 - 2 = 7。', codeLine: '    int need = target - nums[i];', variables: { nums: '[2,7,11,15]', target: 9, i: 0, nums_i: 2, need: 7, map: '{}', answer: '-' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'i=0', index: 0, color: '#18E299' }, { label: 'need=7', index: 1, color: '#fbbf24' }], notes: ['need=7 但 map 目前是空的'] } },
-    { title: '查 seen，沒有 7', explain: '執行 if (seen.count(need))，seen 裡沒有 7，所以不能回傳答案。', codeLine: '  if (seen.count(need)) return {seen[need], i};', variables: { nums: '[2,7,11,15]', target: 9, i: 0, nums_i: 2, need: 7, map: '{}', hasNeed: false, answer: '-' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'i=0', index: 0, color: '#18E299' }, { label: 'not found', index: 1, color: '#ef4444' }], notes: ['seen.count(7) = 0'] } },
-    { title: '把 2 放進 seen', explain: '沒有找到補數，所以執行 seen[nums[i]] = i，記錄 2 的索引是 0。', codeLine: '  seen[nums[i]] = i;', variables: { nums: '[2,7,11,15]', target: 9, i: 0, nums_i: 2, need: 7, map: '{2:0}', answer: '-' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'stored', index: 0, color: '#18E299' }], notes: ['seen = {2:0}', '下一輪若需要 2，就能找到 index 0'] } },
+    { title: '查 seen，沒有 7', explain: '執行 if (seen.count(need))，seen 裡沒有 7，所以不能回傳答案。', codeLine: '    if (seen.count(need)) return {seen[need], i};', variables: { nums: '[2,7,11,15]', target: 9, i: 0, nums_i: 2, need: 7, map: '{}', hasNeed: false, answer: '-' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'i=0', index: 0, color: '#18E299' }, { label: 'not found', index: 1, color: '#ef4444' }], notes: ['seen.count(7) = 0'] } },
+    { title: '把 2 放進 seen', explain: '沒有找到補數，所以執行 seen[nums[i]] = i，記錄 2 的索引是 0。', codeLine: '    seen[nums[i]] = i;', variables: { nums: '[2,7,11,15]', target: 9, i: 0, nums_i: 2, need: 7, map: '{2:0}', answer: '-' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'stored', index: 0, color: '#18E299' }], notes: ['seen = {2:0}', '下一輪若需要 2，就能找到 index 0'] } },
     { title: 'i=1，讀 nums[1]', explain: 'i 前進到 index 1，目前值 nums[i]=7。', codeLine: '  for (int i = 0; i < nums.size(); i++) {', variables: { nums: '[2,7,11,15]', target: 9, i: 1, nums_i: 7, need: '-', map: '{2:0}', answer: '-' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'seen', index: 0, color: '#a78bfa' }, { label: 'i', index: 1, color: '#18E299' }], notes: ['seen 已經記住 2 在 index 0'] } },
     { title: '計算 need=2 並命中', explain: 'need = 9 - 7 = 2。seen 裡有 2，代表 nums[0] + nums[1] = 9。', codeLine: '    int need = target - nums[i];', variables: { nums: '[2,7,11,15]', target: 9, i: 1, nums_i: 7, need: 2, map: '{2:0}', hasNeed: true, answer: '-' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'need=2', index: 0, color: '#fbbf24' }, { label: 'i=1', index: 1, color: '#18E299' }], notes: ['seen.count(2) = 1', 'seen[2] = 0'] } },
-    { title: '回傳答案 [0,1]', explain: '執行 return {seen[need], i}，也就是 [0,1]。', codeLine: '  if (seen.count(need)) return {seen[need], i};', variables: { nums: '[2,7,11,15]', target: 9, i: 1, nums_i: 7, need: 2, map: '{2:0}', answer: '[0,1]' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'answer[0]', index: 0, color: '#18E299' }, { label: 'answer[1]', index: 1, color: '#18E299' }], notes: ['nums[0] + nums[1] = 2 + 7 = 9', '答案是索引，不是數值：[0,1]'] } }
+    { title: '回傳答案 [0,1]', explain: '執行 return {seen[need], i}，也就是 [0,1]。', codeLine: '    if (seen.count(need)) return {seen[need], i};', variables: { nums: '[2,7,11,15]', target: 9, i: 1, nums_i: 7, need: 2, map: '{2:0}', answer: '[0,1]' }, visual: { kind: 'array', items: [2, 7, 11, 15], pointers: [{ label: 'answer[0]', index: 0, color: '#18E299' }, { label: 'answer[1]', index: 1, color: '#18E299' }], notes: ['nums[0] + nums[1] = 2 + 7 = 9', '答案是索引，不是數值：[0,1]'] } }
   ]
   if (raw.id === 'three-sum') return [
     { title: '排序並固定 i', explain: 'nums 排序後固定 i=0，也就是 -4；left 指向 -1，right 指向 2。', codeLine: codeByPattern.array[1], variables: { i: 0, left: 1, right: 5, sum: -3, target: 0 }, visual: { kind: 'array', items: [-4, -1, -1, 0, 1, 2], pointers: [{ label: 'i', index: 0, color: '#18E299' }, { label: 'L', index: 1, color: '#a78bfa' }, { label: 'R', index: 5, color: '#fbbf24' }], notes: ['sum=-4+(-1)+2=-3，太小，left 右移'] } },
@@ -58,7 +58,7 @@ function specificSteps(raw: RawTutorial): Step[] | null {
   if (raw.id === 'container-with-most-water') return [
     { title: '兩端開始', explain: 'left 在高度 1，right 在高度 7，寬度 8，面積由較短邊 1 決定。', codeLine: codeByPattern.array[1], variables: { left: 0, right: 8, width: 8, minHeight: 1, area: 8 }, visual: { kind: 'array', items: [1, 8, 6, 2, 5, 4, 8, 3, 7], pointers: [{ label: 'L', index: 0, color: '#18E299' }, { label: 'R', index: 8, color: '#fbbf24' }], notes: ['area = min(1,7) * 8 = 8；移動短邊 left'] } },
     { title: '移動較短邊', explain: 'left 移到高度 8，right 仍在 7，面積變成 min(8,7)*7=49。', codeLine: codeByPattern.array[2], variables: { left: 1, right: 8, width: 7, minHeight: 7, best: 49 }, visual: { kind: 'array', items: [1, 8, 6, 2, 5, 4, 8, 3, 7], pointers: [{ label: 'L', index: 1, color: '#18E299' }, { label: 'R', index: 8, color: '#fbbf24' }], notes: ['best 更新為 49；接著移動 right'] } },
-    { title: '收斂', explain: '每次只移動較短的板，因為寬度只會變小，保留短板不可能得到更大面積。', codeLine: codeByPattern.array[3], variables: { best: 49, rule: 'move shorter side' }, visual: { kind: 'array', items: [1, 8, 6, 2, 5, 4, 8, 3, 7], pointers: [{ label: 'best L', index: 1, color: '#18E299' }, { label: 'best R', index: 8, color: '#fbbf24' }], notes: ['答案 49 來自 index 1 與 8'] } }
+    { title: '收斂', explain: '每次只移動較短的板，因為寬度只會變小，保留短板不可能得到更大面積。', codeLine: codeByPattern.array[3], variables: { best: 49, rule: 'move shorter side', left: 1, right: 8 }, visual: { kind: 'array', items: [1, 8, 6, 2, 5, 4, 8, 3, 7], pointers: [{ label: 'best L', index: 1, color: '#18E299' }, { label: 'best R', index: 8, color: '#fbbf24' }], notes: ['答案 49 來自 index 1 與 8'] } }
   ]
   if (raw.id === 'number-of-islands') return [
     { title: '遇到第一塊陸地', explain: '掃描 grid，遇到第一個 1，島嶼數 +1，並從這格開始 DFS。', codeLine: codeByPattern.array[1], variables: { row: 0, col: 0, islands: 1, current: '1' }, visual: { kind: 'array', items: ['1', '1', '0', '1', '0'], pointers: [{ label: 'DFS', index: 0, color: '#18E299' }], notes: ['這裡用一列壓縮圖表示 grid 的目前掃描列'] } },
@@ -77,7 +77,7 @@ function specificSteps(raw: RawTutorial): Step[] | null {
   if (raw.id === 'invert-binary-tree') return [
     { title: 'current = 4', explain: '目前在 root=4，左子樹是 2，右子樹是 7。', codeLine: codeByPattern.tree[0], variables: { current: 4, left: 2, right: 7 }, visual: { kind: 'tree', nodes: [{ id: '4', value: 4, x: 50, y: 8, left: '2', right: '7', highlight: true }, { id: '2', value: 2, x: 28, y: 35, left: '1', right: '3' }, { id: '7', value: 7, x: 72, y: 35, left: '6', right: '9' }, { id: '1', value: 1, x: 18, y: 68 }, { id: '3', value: 3, x: 38, y: 68 }, { id: '6', value: 6, x: 62, y: 68 }, { id: '9', value: 9, x: 82, y: 68 }], pointers: [{ label: 'current', node: '4' }], notes: ['交換 4.left 與 4.right，不是改節點值'] } },
     { title: '交換 root 左右', explain: '4.left 改指向 7，4.right 改指向 2，圖形位置同步左右對調。', codeLine: codeByPattern.tree[4], variables: { current: 4, left: 7, right: 2 }, visual: { kind: 'tree', nodes: [{ id: '4', value: 4, x: 50, y: 8, left: '7', right: '2', highlight: true }, { id: '7', value: 7, x: 28, y: 35, left: '6', right: '9' }, { id: '2', value: 2, x: 72, y: 35, left: '1', right: '3' }, { id: '6', value: 6, x: 18, y: 68 }, { id: '9', value: 9, x: 38, y: 68 }, { id: '1', value: 1, x: 62, y: 68 }, { id: '3', value: 3, x: 82, y: 68 }], pointers: [{ label: 'current', node: '4' }], notes: ['指標換邊，子樹整包跟著換邊'] } },
-    { title: '遞迴處理子樹', explain: '接著 current 移到 7 與 2，各自重複交換左右孩子。', codeLine: codeByPattern.tree[2], variables: { nextCurrent: 7, action: 'swap children recursively' }, visual: { kind: 'tree', nodes: [{ id: '4', value: 4, x: 50, y: 8, left: '7', right: '2' }, { id: '7', value: 7, x: 28, y: 35, left: '9', right: '6', highlight: true }, { id: '2', value: 2, x: 72, y: 35, left: '3', right: '1' }, { id: '9', value: 9, x: 18, y: 68 }, { id: '6', value: 6, x: 38, y: 68 }, { id: '3', value: 3, x: 62, y: 68 }, { id: '1', value: 1, x: 82, y: 68 }], pointers: [{ label: 'current', node: '7' }], notes: ['每個節點的圖都會改，不是同一張示意圖'] } }
+    { title: '遞迴處理子樹', explain: '接著 current 移到 7 與 2，各自重複交換左右孩子。', codeLine: codeByPattern.tree[2], variables: { nextCurrent: 7, action: 'swap children recursively', parent: 4, done: false }, visual: { kind: 'tree', nodes: [{ id: '4', value: 4, x: 50, y: 8, left: '7', right: '2' }, { id: '7', value: 7, x: 28, y: 35, left: '9', right: '6', highlight: true }, { id: '2', value: 2, x: 72, y: 35, left: '3', right: '1' }, { id: '9', value: 9, x: 18, y: 68 }, { id: '6', value: 6, x: 38, y: 68 }, { id: '3', value: 3, x: 62, y: 68 }, { id: '1', value: 1, x: 82, y: 68 }], pointers: [{ label: 'current', node: '7' }], notes: ['每個節點的圖都會改，不是同一張示意圖'] } }
   ]
   if (raw.id === 'reverse-linked-list') return [
     { title: '保存 next', explain: 'cur 在 1，先保存 next=2，否則反轉 cur.next 後會找不到後面的鏈表。', codeLine: codeByPattern['linked-list'][2], variables: { prev: null, cur: 1, next: 2 }, visual: { kind: 'linked-list', links: [{ id: '1', value: 1, next: '2', highlight: true }, { id: '2', value: 2, next: '3' }, { id: '3', value: 3, next: null }], pointers: [{ label: 'cur', node: '1' }, { label: 'next', node: '2' }], notes: ['先保存 next，再改 cur.next'] } },
@@ -87,30 +87,87 @@ function specificSteps(raw: RawTutorial): Step[] | null {
   return null
 }
 
+function sampleTreeNodes(current = '4'): Step['visual']['nodes'] {
+  return [
+    { id: '4', value: 4, x: 50, y: 8, left: '2', right: '7', highlight: current === '4' },
+    { id: '2', value: 2, x: 28, y: 35, left: '1', right: '3', highlight: current === '2' },
+    { id: '7', value: 7, x: 72, y: 35, left: '6', right: '9', highlight: current === '7' },
+    { id: '1', value: 1, x: 18, y: 68, highlight: current === '1' },
+    { id: '3', value: 3, x: 38, y: 68, highlight: current === '3' },
+    { id: '6', value: 6, x: 62, y: 68, highlight: current === '6' },
+    { id: '9', value: 9, x: 82, y: 68, highlight: current === '9' }
+  ]
+}
+
+function testcaseLabelFor(raw: RawTutorial): string {
+  if (raw.pattern === 'linked-list') return 'head = [1,2,3,4]'
+  if (raw.pattern === 'tree') return 'root = [4,2,7,1,3,6,9]'
+  if (raw.pattern === 'stack') return raw.tags.includes('String') ? 's = "()[]{}"' : 'input = [1,1,1,2,2,3]'
+  return `sample = [${arrayItemsFor(raw).join(',')}]`
+}
+
+function introStep(raw: RawTutorial): Step {
+  const code = codeFor(raw)
+  if (raw.pattern === 'linked-list') return { title: '建立測資與指標', explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，先把 dummy、prev、cur、next 畫出來。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), prev: 'dummy', cur: 'head', answer: 'pending' }, visual: { kind: 'linked-list', links: [{ id: 'd', value: 'dummy', next: 'a' }, { id: 'a', value: 1, next: 'b', highlight: true }, { id: 'b', value: 2, next: 'c' }, { id: 'c', value: 3, next: 'd4' }, { id: 'd4', value: 4, next: null }], pointers: [{ label: 'prev', node: 'd' }, { label: 'cur', node: 'a' }], notes: ['不是固定示意圖：每一步都要看指標是否被重接。'] } }
+  if (raw.pattern === 'tree') return { title: '建立測資樹', explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，先確認 current 與左右子樹。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), current: 'root', focus: raw.focus, answer: 'pending' }, visual: { kind: 'tree', nodes: sampleTreeNodes('4'), pointers: [{ label: 'current=root', node: '4' }], notes: ['樹題 dry run 要追蹤 current、leftResult、rightResult。'] } }
+  if (raw.pattern === 'stack') return { title: '建立輸入與空 stack', explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，stack 一開始為空。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), i: 0, item: 'input[0]', stack: '[]' }, visual: { kind: 'stack', stack: [], notes: ['stack 題要追蹤 top 與 push/pop 後的內容。'] } }
+  const items = arrayItemsFor(raw)
+  return { title: '建立測資與初始狀態', explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，先初始化主要變數。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), i: '-', current: '-', answer: '初始值' }, visual: { kind: 'array', items, pointers: [], notes: ['使用本題測資，不再用固定三步模板。'] } }
+}
+
+function finishStep(raw: RawTutorial): Step {
+  const code = codeFor(raw)
+  const codeLine = code[code.length - 1]
+  if (raw.pattern === 'linked-list') return { title: '回傳結果鏈表', explain: `依照題意完成 ${raw.operation} 後，回傳新的 head 或答案。`, codeLine, variables: { done: true, resultHead: 'dummy.next/head', answer: '依題意' }, visual: { kind: 'linked-list', links: [{ id: 'a', value: 1, next: 'b' }, { id: 'b', value: 2, next: 'c', highlight: true }, { id: 'c', value: 3, next: null }], pointers: [{ label: 'result', node: 'b' }], notes: ['最後檢查是否遺失節點、是否形成 cycle。'] } }
+  if (raw.pattern === 'tree') return { title: '回傳到父節點 / 得到答案', explain: `將 current 與左右結果合併後，回傳 ${raw.focus} 的最終狀態。`, codeLine, variables: { done: true, result: 'combine 後答案', focus: raw.focus }, visual: { kind: 'tree', nodes: sampleTreeNodes('4'), pointers: [{ label: 'return result', node: '4' }], notes: ['確認回傳值與全域答案是否分開。'] } }
+  if (raw.pattern === 'stack') return { title: '掃描結束並回傳答案', explain: '輸入掃描完畢，依 stack 與 answer 的最終狀態回傳。', codeLine, variables: { done: true, stack: 'final', answer: '最終答案' }, visual: { kind: 'stack', stack: ['final'], notes: ['最後確認 stack 是否應為空，或 top 是否代表答案。'] } }
+  const items = arrayItemsFor(raw)
+  return { title: '回傳最終答案', explain: `測資跑完後，根據 ${raw.focus} 回傳答案。`, codeLine, variables: { done: true, answer: '最終答案', testcase: testcaseLabelFor(raw) }, visual: { kind: 'array', items, pointers: [{ label: 'answer', index: Math.min(1, items.length - 1), color: '#18E299' }], notes: ['最後用測資核對答案與邊界條件。'] } }
+}
+
+function ensureMinimumSteps(raw: RawTutorial, steps: Step[]): Step[] {
+  if (steps.length >= 5) return steps
+  const expanded = [introStep(raw), ...steps, finishStep(raw)]
+  return expanded.length >= 5 ? expanded : [...expanded, finishStep(raw)]
+}
+
 function stepsFor(raw: RawTutorial): Step[] {
   const specific = specificSteps(raw)
-  if (specific) return specific
+  if (specific) return ensureMinimumSteps(raw, specific)
   const items = arrayItemsFor(raw)
-  if (raw.pattern === 'linked-list') return [
-    { title: '建立白板狀態', explain: `${raw.title} 先把 dummy、prev、cur 畫出來，確認每個指標目前指向哪個節點。`, codeLine: codeByPattern['linked-list'][1], variables: { prev: 'dummy', cur: 'head', operation: raw.operation }, visual: { kind: 'linked-list', links: [{ id: 'd', value: 'dummy', next: 'a' }, { id: 'a', value: 1, next: 'b', highlight: true }, { id: 'b', value: 2, next: 'c' }, { id: 'c', value: 3, next: null }], pointers: [{ label: 'prev', node: 'd' }, { label: 'cur', node: 'a' }], notes: ['先畫節點，再畫指標；不要直接改值。'] } },
-    { title: '改變連線', explain: `執行核心動作：${raw.operation}。白板上用箭頭重接 next，先保存會被斷開的節點。`, codeLine: codeByPattern['linked-list'][2], variables: { savedNext: 'cur.next', changed: true, focus: raw.focus }, visual: { kind: 'linked-list', links: [{ id: 'd', value: 'dummy', next: 'b', faded: true }, { id: 'b', value: 2, next: 'a', highlight: true }, { id: 'a', value: 1, next: 'c' }, { id: 'c', value: 3, next: null }], pointers: [{ label: 'prev', node: 'd' }, { label: 'cur', node: 'b' }], notes: ['箭頭變化是本題 dry run 的核心。'] } },
-    { title: '移動指標並收斂', explain: '完成本輪後移動指標，檢查是否已處理完剩餘節點。', codeLine: codeByPattern['linked-list'][3], variables: { prev: '下一個穩定節點', cur: '下一個待處理節點', done: '依題目條件' }, visual: { kind: 'linked-list', links: [{ id: 'd', value: 'dummy', next: 'b', faded: true }, { id: 'b', value: 2, next: 'a' }, { id: 'a', value: 1, next: 'c' }, { id: 'c', value: 3, next: null, highlight: true }], pointers: [{ label: 'tail / cur', node: 'c' }], notes: ['每一輪只做一個安全的指標變更。'] } }
-  ]
-  if (raw.pattern === 'tree') return [
-    { title: '定位 current node', explain: `${raw.title} 先把 root/current、左右子樹與回傳值畫清楚。`, codeLine: codeByPattern.tree[0], variables: { current: 'root', left: '待計算', right: '待計算', focus: raw.focus }, visual: { kind: 'tree', nodes: [{ id: '4', value: 4, x: 50, y: 8, left: '2', right: '7', highlight: true }, { id: '2', value: 2, x: 28, y: 35, left: '1', right: '3' }, { id: '7', value: 7, x: 72, y: 35, left: '6', right: '9' }, { id: '1', value: 1, x: 18, y: 68 }, { id: '3', value: 3, x: 38, y: 68 }, { id: '6', value: 6, x: 62, y: 68 }, { id: '9', value: 9, x: 82, y: 68 }], pointers: [{ label: 'current', node: '4' }], notes: ['樹題先問：目前節點要向左右子樹拿什麼資訊？'] } },
-    { title: '處理左右子樹', explain: `對 left/right 套用同一個規則：${raw.operation}。`, codeLine: codeByPattern.tree[2], variables: { current: 4, leftResult: '由左子樹回傳', rightResult: '由右子樹回傳' }, visual: { kind: 'tree', nodes: [{ id: '4', value: 4, x: 50, y: 8, left: '2', right: '7' }, { id: '2', value: 2, x: 28, y: 35, left: '1', right: '3', highlight: true }, { id: '7', value: 7, x: 72, y: 35, left: '6', right: '9', highlight: true }, { id: '1', value: 1, x: 18, y: 68 }, { id: '3', value: 3, x: 38, y: 68 }, { id: '6', value: 6, x: 62, y: 68 }, { id: '9', value: 9, x: 82, y: 68 }], notes: ['左右結果回到 current 後再合併。'] } },
-    { title: '合併並回傳', explain: '把 current 的值與左右結果合併，回傳給父節點或成為答案。', codeLine: codeByPattern.tree[4], variables: { combine: 'node + left + right', answer: '更新全域或回傳值' }, visual: { kind: 'tree', nodes: [{ id: '4', value: 4, x: 50, y: 8, left: '2', right: '7', highlight: true }, { id: '2', value: 2, x: 28, y: 35 }, { id: '7', value: 7, x: 72, y: 35 }], pointers: [{ label: 'return', node: '4' }], notes: ['後序 / 前序 / 中序差異在合併時機。'] } }
-  ]
-  if (raw.pattern === 'stack') return [
-    { title: '掃描輸入', explain: `${raw.title} 把目前元素與 stack top 同時寫在白板上。`, codeLine: codeByPattern.stack[0], variables: { i: 0, current: '第一個元素', stackTop: '空', focus: raw.focus }, visual: { kind: 'stack', stack: [], notes: ['stack 保存尚未解決的候選狀態。'] } },
-    { title: '根據 top 決定 push / pop', explain: `如果 top 已不符合條件，就彈出；否則把目前狀態放入 stack。核心動作：${raw.operation}。`, codeLine: codeByPattern.stack[1], variables: { action: 'push / pop', stack: '[候選狀態]', answer: '可能更新' }, visual: { kind: 'stack', stack: ['候選 1', '候選 2'], notes: ['只比較目前元素與 stack top。'] } },
-    { title: '輸出答案', explain: '掃描結束後，stack 或累積答案給出最終結果。', codeLine: codeByPattern.stack[3], variables: { done: true, answer: '依題目定義' }, visual: { kind: 'stack', stack: ['最終狀態'], notes: ['檢查是否需要清空 stack 或保留 top。'] } }
-  ]
-  return [
-    { title: '初始化窗口 / 狀態', explain: `${raw.title} 先定義指標、答案與輔助資料結構。`, codeLine: codeByPattern.array[0], variables: { left: 0, right: 0, answer: '初始值', focus: raw.focus }, visual: { kind: 'array', items: items, pointers: [{ label: 'L', index: 0, color: '#18E299' }, { label: 'R', index: 0, color: '#a78bfa' }], notes: ['先確認不變量：目前狀態代表什麼？'] } },
-    { title: '移動指標並更新狀態', explain: `依照條件執行：${raw.operation}。每次移動後同步更新變數表。`, codeLine: codeByPattern.array[2], variables: { left: 0, right: 2, current: 'nums[right]', answer: '更新中' }, visual: { kind: 'array', items: items, pointers: [{ label: 'L', index: 0, color: '#18E299' }, { label: 'R', index: 2, color: '#a78bfa' }], notes: ['白板 dry run 只展示關鍵狀態轉移。'] } },
-    { title: '收斂答案', explain: '當掃描完成或條件命中，回傳目前最佳答案。', codeLine: codeByPattern.array[3], variables: { done: true, answer: '最終結果' }, visual: { kind: 'array', items: items, pointers: [{ label: 'answer', index: 1, color: '#18E299' }, { label: 'answer', index: 2, color: '#18E299' }], notes: ['確認邊界：空陣列、單元素、重複值。'] } }
-  ]
+  const code = codeFor(raw)
+  if (raw.pattern === 'linked-list') return ensureMinimumSteps(raw, [
+    introStep(raw),
+    { title: '保存 next', explain: `依 C++ 指標操作，先保存 next，避免 ${raw.operation} 時斷掉後半段。`, codeLine: code[2], variables: { prev: 'dummy', cur: 1, next: 2, operation: raw.operation }, visual: { kind: 'linked-list', links: [{ id: 'd', value: 'dummy', next: 'a' }, { id: 'a', value: 1, next: 'b', highlight: true }, { id: 'b', value: 2, next: 'c' }, { id: 'c', value: 3, next: null }], pointers: [{ label: 'cur', node: 'a' }, { label: 'next', node: 'b' }], notes: ['C++ 指標題一定先保留會被斷開的 next。'] } },
+    { title: '重接 next 指標', explain: `執行核心動作：${raw.operation}，圖上的箭頭同步改變。`, codeLine: code[3], variables: { prev: 'dummy/previous', cur: 1, next: 2, changed: 'cur->next rewired' }, visual: { kind: 'linked-list', links: [{ id: 'd', value: 'dummy', next: 'b', faded: true }, { id: 'b', value: 2, next: 'a', highlight: true }, { id: 'a', value: 1, next: 'c' }, { id: 'c', value: 3, next: null }], pointers: [{ label: 'rewired', node: 'b' }], notes: ['這一步是鏈表題真正的動畫重點。'] } },
+    { title: '移動 prev / cur', explain: '完成本輪後，prev 與 cur 前進到下一個白板狀態。', codeLine: code[4], variables: { prev: 1, cur: 2, next: 3, done: false }, visual: { kind: 'linked-list', links: [{ id: 'd', value: 'dummy', next: 'b' }, { id: 'b', value: 2, next: 'a', highlight: true }, { id: 'a', value: 1, next: 'c' }, { id: 'c', value: 3, next: null }], pointers: [{ label: 'cur', node: 'b' }, { label: 'prev', node: 'a' }], notes: ['每一輪只移動到下一個安全狀態。'] } },
+    { title: '處理下一個節點', explain: '重複保存 next、重接、前進，直到 cur 走到 nullptr。', codeLine: code[1], variables: { prev: 2, cur: 3, next: 'nullptr/next', invariant: 'processed prefix stable' }, visual: { kind: 'linked-list', links: [{ id: 'c', value: 3, next: 'b', highlight: true }, { id: 'b', value: 2, next: 'a' }, { id: 'a', value: 1, next: null }], pointers: [{ label: 'cur', node: 'c' }], notes: ['檢查已處理區與未處理區沒有斷裂。'] } },
+    finishStep(raw)
+  ])
+  if (raw.pattern === 'tree') return ensureMinimumSteps(raw, [
+    introStep(raw),
+    { title: '進入 current 節點', explain: `${raw.title} 在 current=4 時先檢查 base case，接著準備遞迴左右子樹。`, codeLine: code[1], variables: { current: 4, baseCase: false, focus: raw.focus, answer: 'pending' }, visual: { kind: 'tree', nodes: sampleTreeNodes('4'), pointers: [{ label: 'current=4', node: '4' }], notes: ['每個節點都要問：我需要左右子樹回傳什麼？'] } },
+    { title: '遞迴左子樹', explain: `左子樹 current=2，套用同一個規則：${raw.operation}。`, codeLine: code[2], variables: { current: 2, parent: 4, leftResult: 'calculating', rightResult: 'pending' }, visual: { kind: 'tree', nodes: sampleTreeNodes('2'), pointers: [{ label: 'dfs(left)', node: '2' }], notes: ['左子樹回傳值會影響 current 的合併。'] } },
+    { title: '遞迴右子樹', explain: '右子樹 current=7，計算另一側結果。', codeLine: code[3], variables: { current: 7, parent: 4, leftResult: 'ready', rightResult: 'calculating' }, visual: { kind: 'tree', nodes: sampleTreeNodes('7'), pointers: [{ label: 'dfs(right)', node: '7' }], notes: ['左右兩側都完成後才能合併 current。'] } },
+    { title: '在 current 合併結果', explain: `把 node->val、left、right 依題意合併：${raw.operation}。`, codeLine: code[4], variables: { current: 4, leftResult: 'L', rightResult: 'R', result: 'combine(4,L,R)' }, visual: { kind: 'tree', nodes: sampleTreeNodes('4'), pointers: [{ label: 'combine', node: '4' }], notes: ['不同樹題差異在 combine 與回傳值。'] } },
+    finishStep(raw)
+  ])
+  if (raw.pattern === 'stack') return ensureMinimumSteps(raw, [
+    introStep(raw),
+    { title: '讀取第一個元素', explain: '取出目前 item，與 stack top 比較。', codeLine: code[0], variables: { i: 0, item: 'input[0]', stackTop: 'empty', answer: 'initial' }, visual: { kind: 'stack', stack: [], notes: ['空 stack 通常直接 push。'] } },
+    { title: '依條件彈出', explain: `若 top 已不符合條件，就執行 pop。核心規則：${raw.operation}。`, codeLine: code[1], variables: { action: 'pop while needed', item: 'current', stack: '[候選]', answer: 'maybe update' }, visual: { kind: 'stack', stack: ['候選 1'], notes: ['while 條件決定連續彈出幾次。'] } },
+    { title: 'push 目前狀態', explain: '把目前元素或狀態放入 stack，等待後續元素解決。', codeLine: code[2], variables: { action: 'push', item: 'current', stack: '[候選, current]', size: 2 }, visual: { kind: 'stack', stack: ['候選', 'current'], notes: ['push 後 top 改變。'] } },
+    { title: '更新答案', explain: '根據 stack top 或 heap top 更新目前答案。', codeLine: code[3], variables: { stackTop: 'current', answer: 'updated', done: false }, visual: { kind: 'stack', stack: ['候選', 'current'], notes: ['答案變化也要寫進變數表。'] } },
+    finishStep(raw)
+  ])
+  return ensureMinimumSteps(raw, [
+    introStep(raw),
+    { title: '初始化主要變數', explain: `依 C++ 解法先建立 answer、指標或 DP 狀態，目標是追蹤 ${raw.focus}。`, codeLine: code[1], variables: { i: '-', current: '-', answer: '初始值', focus: raw.focus }, visual: { kind: 'array', items, pointers: [{ label: 'start', index: 0, color: '#18E299' }], notes: ['初始化值會影響空陣列、單元素等邊界。'] } },
+    { title: '讀取 sample[0]', explain: `進入 for 迴圈，讀第一個測資元素並套用：${raw.operation}。`, codeLine: code[2], variables: { i: 0, current: items[0] ?? '-', answer: '更新前', operation: raw.operation }, visual: { kind: 'array', items, pointers: [{ label: 'i=0', index: 0, color: '#18E299' }], notes: ['每一步對應實際測資位置。'] } },
+    { title: '更新狀態 / 指標', explain: '依條件更新目前狀態，並同步改變圖上的指標或標記。', codeLine: code[4], variables: { i: 0, current: items[0] ?? '-', answer: '更新後', invariant: raw.focus }, visual: { kind: 'array', items, pointers: [{ label: 'processed', index: 0, color: '#18E299' }, { label: 'next', index: Math.min(1, items.length - 1), color: '#a78bfa' }], notes: ['變數表要能看出更新前後差異。'] } },
+    { title: '移到下一個元素', explain: 'i 前進，使用下一個測資值再次檢查不變量。', codeLine: code[3], variables: { i: 1, current: items[1] ?? '-', previousAnswer: '上一輪結果', answer: '可能更新' }, visual: { kind: 'array', items, pointers: [{ label: 'prev', index: 0, color: '#64748b' }, { label: 'i=1', index: Math.min(1, items.length - 1), color: '#18E299' }], notes: ['不是一次跳到答案，要逐項 dry run。'] } },
+    finishStep(raw)
+  ])
 }
 
 function codeFor(raw: RawTutorial): string[] {

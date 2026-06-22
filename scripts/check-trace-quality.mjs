@@ -19,7 +19,7 @@ const required = [
   "answer: '[0,1]'",
   "unordered_map<int, int> seen;",
   "codeLine: '    int need = target - nums[i];'",
-  "codeLine: '  if (seen.count(need)) return {seen[need], i};'",
+  "codeLine: '    if (seen.count(need)) return {seen[need], i};'",
   "raw.id === 'validate-binary-search-tree'",
   "root = [5,1,4,null,null,3,6]",
   "valid(4, 5, +∞)",

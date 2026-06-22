@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 
 const source = readFileSync(new URL('../src/tutorialData.ts', import.meta.url), 'utf8')
-const ids = [...source.matchAll(/^\s*\{ id: '([^']+)'/gm)].map(match => match[1])
+const catalogSource = source.slice(source.indexOf('const rawTutorials'), source.indexOf('export const tutorials'))
+const ids = [...catalogSource.matchAll(/^\s*\{ id: '([^']+)'/gm)].map(match => match[1])
 const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index)
 
 const requiredTitles = [
