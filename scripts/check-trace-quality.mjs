@@ -10,14 +10,15 @@ const required = [
   "map: '{}'",
   "map: '{2:0}'",
   "answer: '[0,1]'",
-  "codeLine: '  const need = target - nums[i]'",
-  "codeLine: '  if (map.has(need)) return [map.get(need)!, i]'"
+  "unordered_map<int, int> seen;",
+  "codeLine: '    int need = target - nums[i];'",
+  "codeLine: '  if (seen.count(need)) return {seen[need], i};'"
 ]
 const missing = required.filter(x => !source.includes(x))
-if (missing.length) throw new Error(`Two Sum trace is not tied to LeetCode testcase/code. Missing:\n${missing.join('\n')}`)
+if (missing.length) throw new Error(`Two Sum trace is not tied to LeetCode testcase/C++ code. Missing:\n${missing.join('\n')}`)
 const stepCount = (twoSumBlock.match(/title:/g) ?? []).length
 if (stepCount < 6) throw new Error(`Two Sum must have at least 6 dry-run steps, found ${stepCount}`)
 if (!appSource.includes('變數變化時間線') || !appSource.includes('function VariableTimeline')) {
   throw new Error('UI must include a variable timeline table, not only current variables')
 }
-console.log(`Trace quality check passed: Two Sum has ${stepCount} code-aligned steps and variable timeline UI`)
+console.log(`Trace quality check passed: Two Sum has ${stepCount} C++ code-aligned steps and variable timeline UI`)
