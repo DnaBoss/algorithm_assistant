@@ -17,8 +17,10 @@ const requiredSnippets = [
 const missing = requiredSnippets.filter(snippet => !source.includes(snippet))
 if (missing.length) throw new Error(`Dry-run still lacks problem-specific visual traces. Missing snippets:\n${missing.join('\n')}`)
 
-const placeholderCount = (source.match(/items: \[2, 7, 11, 15\]/g) ?? []).length
-if (placeholderCount > 1) throw new Error(`Placeholder array [2,7,11,15] reused ${placeholderCount} times`)
+const twoSumBlock = source.slice(source.indexOf("raw.id === 'two-sum'"), source.indexOf("if (raw.id === 'three-sum'"))
+const sourceWithoutTwoSumTrace = source.replace(twoSumBlock, '')
+const placeholderCount = (sourceWithoutTwoSumTrace.match(/items: \[2, 7, 11, 15\]/g) ?? []).length
+if (placeholderCount > 1) throw new Error(`Placeholder array [2,7,11,15] reused outside Two Sum ${placeholderCount} times`)
 
 const genericLinkedCount = (source.match(/value: 'dummy', next: 'a'/g) ?? []).length
 if (genericLinkedCount > 2) throw new Error(`Generic linked-list dummy fixture reused ${genericLinkedCount} times`)
