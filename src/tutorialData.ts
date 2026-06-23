@@ -277,11 +277,11 @@ function testcaseLabelFor(raw: RawTutorial): string {
 
 function introStep(raw: RawTutorial): Step {
   const code = codeFor(raw)
-  if (raw.pattern === 'linked-list') return { title: '建立測資與指標', explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，先把 dummy、prev、cur、next 畫出來。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), prev: 'dummy', cur: 'head', answer: 'pending' }, visual: { kind: 'linked-list', links: [{ id: 'd', value: 'dummy', next: 'a' }, { id: 'a', value: 1, next: 'b', highlight: true }, { id: 'b', value: 2, next: 'c' }, { id: 'c', value: 3, next: 'd4' }, { id: 'd4', value: 4, next: null }], pointers: [{ label: 'prev', node: 'd' }, { label: 'cur', node: 'a' }], notes: ['不是固定示意圖：每一步都要看指標是否被重接。'] } }
-  if (raw.pattern === 'tree') return { title: '建立測資樹', explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，先確認 current 與左右子樹。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), current: 'root', focus: raw.focus, answer: 'pending' }, visual: { kind: 'tree', nodes: sampleTreeNodes('4'), pointers: [{ label: 'current=root', node: '4' }], notes: ['樹題 dry run 要追蹤 current、leftResult、rightResult。'] } }
-  if (raw.pattern === 'stack') return { title: '建立輸入與空 stack', explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，stack 一開始為空。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), i: 0, item: 'input[0]', stack: '[]' }, visual: { kind: 'stack', stack: [], notes: ['stack 題要追蹤 top 與 push/pop 後的內容。'] } }
+  if (raw.pattern === 'linked-list') return { title: `測資 ${testcaseLabelFor(raw)}：建立鏈表指標`, explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，先把 dummy、prev、cur、next 畫出來。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), prev: 'dummy', cur: 'head', answer: 'pending' }, visual: { kind: 'linked-list', links: [{ id: 'd', value: 'dummy', next: 'a' }, { id: 'a', value: 1, next: 'b', highlight: true }, { id: 'b', value: 2, next: 'c' }, { id: 'c', value: 3, next: 'd4' }, { id: 'd4', value: 4, next: null }], pointers: [{ label: 'prev', node: 'd' }, { label: 'cur', node: 'a' }], notes: ['不是固定示意圖：每一步都要看指標是否被重接。'] } }
+  if (raw.pattern === 'tree') return { title: `測資 ${testcaseLabelFor(raw)}：定位 root/current`, explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，先確認 current 與左右子樹。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), current: 'root', focus: raw.focus, answer: 'pending' }, visual: { kind: 'tree', nodes: sampleTreeNodes('4'), pointers: [{ label: 'current=root', node: '4' }], notes: ['樹題 dry run 要追蹤 current、leftResult、rightResult。'] } }
+  if (raw.pattern === 'stack') return { title: `測資 ${testcaseLabelFor(raw)}：stack 初始狀態`, explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，stack 一開始為空。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), i: 0, item: 'input[0]', stack: '[]' }, visual: { kind: 'stack', stack: [], notes: ['stack 題要追蹤 top 與 push/pop 後的內容。'] } }
   const items = arrayItemsFor(raw)
-  return { title: '建立測資與初始狀態', explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，先初始化主要變數。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), i: '-', current: '-', answer: '初始值' }, visual: { kind: 'array', items, pointers: [], notes: ['使用本題測資，不再用固定三步模板。'] } }
+  return { title: `測資 ${testcaseLabelFor(raw)}：初始化 ${raw.focus}`, explain: `${raw.title} 使用測資 ${testcaseLabelFor(raw)}，先初始化主要變數。`, codeLine: code[0], variables: { testcase: testcaseLabelFor(raw), i: '-', current: '-', answer: '初始值' }, visual: { kind: 'array', items, pointers: [], notes: ['使用本題測資，不再用固定三步模板。'] } }
 }
 
 function finishStep(raw: RawTutorial): Step {
@@ -295,9 +295,13 @@ function finishStep(raw: RawTutorial): Step {
 }
 
 function targetStepCount(raw: RawTutorial): number {
-  if (raw.difficulty === 'Hard' && (raw.tags.includes('Graph') || raw.tags.includes('Tree') || raw.tags.includes('Backtracking') || raw.tags.includes('String'))) return 9
-  if (raw.difficulty === 'Hard') return 8
-  if (raw.difficulty === 'Medium' && (raw.tags.includes('Graph') || raw.tags.includes('DP') || raw.tags.includes('Tree') || raw.tags.includes('Backtracking') || raw.tags.includes('Matrix') || raw.tags.includes('Linked List'))) return 7
+  if (raw.id === 'coin-change') return 15
+  if (raw.tags.includes('DP') && raw.difficulty !== 'Easy') return 10
+  if (raw.tags.includes('Backtracking')) return raw.difficulty === 'Hard' ? 12 : 9
+  if (raw.tags.includes('Graph') && raw.difficulty !== 'Easy') return raw.difficulty === 'Hard' ? 12 : 9
+  if (raw.tags.includes('Tree') && raw.difficulty !== 'Easy') return raw.difficulty === 'Hard' ? 10 : 8
+  if (raw.tags.includes('Linked List') && raw.difficulty !== 'Easy') return raw.difficulty === 'Hard' ? 10 : 8
+  if (raw.difficulty === 'Hard') return 9
   if (raw.difficulty === 'Medium') return 7
   return 5
 }
@@ -307,7 +311,7 @@ function expansionStep(raw: RawTutorial, index: number): Step {
   const items = arrayItemsFor(raw)
   const line = code[Math.min(2 + (index % Math.max(1, code.length - 3)), code.length - 2)] ?? code[0]
   const titlePool = ['第二輪測資推進', '分支條件檢查', '邊界狀態檢查', '不變量核對']
-  const title = titlePool[index % titlePool.length]
+  const title = `${titlePool[index % titlePool.length]} #${index + 1}`
   if (raw.pattern === 'linked-list') return { title, explain: `依照 ${raw.operation} 繼續推進一個鏈表狀態，這題需要額外檢查指標是否斷鏈或接錯。`, codeLine: line, variables: { phase: title, prev: '上一個節點', cur: '目前節點', next: '保留後續', stepReason: raw.difficulty }, visual: { kind: 'linked-list', links: [{ id: 'a', value: 1, next: 'b' }, { id: 'b', value: 2, next: 'c', highlight: true }, { id: 'c', value: 3, next: null }], pointers: [{ label: 'cur', node: 'b' }], notes: ['額外步驟來自鏈表指標重接，不是固定模板。'] } }
   if (raw.pattern === 'tree') return { title, explain: `樹題要多看一層遞迴回傳：${raw.operation}。`, codeLine: line, variables: { phase: title, current: 'child subtree', leftResult: '已知', rightResult: '待合併', stepReason: raw.difficulty }, visual: { kind: 'tree', nodes: sampleTreeNodes(index % 2 ? '2' : '7'), pointers: [{ label: 'extra recursion', node: index % 2 ? '2' : '7' }], notes: ['步數隨遞迴分支增加。'] } }
   if (raw.pattern === 'stack') return { title, explain: `stack/heap 題要檢查 push/pop 後 top 是否仍滿足 ${raw.focus}。`, codeLine: line, variables: { phase: title, top: '目前 top', size: index + 2, answer: '可能更新' }, visual: { kind: 'stack', stack: ['候選', 'current', title], notes: ['額外步驟來自連續 pop/push 或 heap rebalance。'] } }
