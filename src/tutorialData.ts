@@ -166,9 +166,9 @@ function specificSteps(raw: RawTutorial): Step[] | null {
     { title: '回傳反轉後 ans', explain: '32 輪完成後，ans 就是 bit 反轉結果。', codeLine: '  return ans;', variables: { done: true, input: 43261596, answer: 964176192, rounds: 32 }, visual: { kind: 'array', items: ['964176192'], pointers: [{ label: 'answer', index: 0, color: '#18E299' }], notes: ['LeetCode 範例答案 964176192'] } }
   ]
   if (raw.id === 'number-of-islands') return [
-    { title: '遇到第一塊陸地', explain: '掃描 grid，遇到第一個 1，島嶼數 +1，並從這格開始 DFS。', codeLine: codeByPattern.array[1], variables: { row: 0, col: 0, islands: 1, current: '1' }, visual: { kind: 'array', items: ['1', '1', '0', '1', '0'], pointers: [{ label: 'DFS', index: 0, color: '#18E299' }], notes: ['這裡用一列壓縮圖表示 grid 的目前掃描列'] } },
-    { title: 'DFS 沉島', explain: '把相連的 1 標記成 visited/0，避免之後重複計算同一座島。', codeLine: codeByPattern.array[2], variables: { visited: '(0,0),(0,1)', islands: 1, action: 'mark 1 -> 0' }, visual: { kind: 'array', items: ['0', '0', '0', '1', '0'], pointers: [{ label: 'visited', index: 0, color: '#a78bfa' }, { label: 'visited', index: 1, color: '#a78bfa' }], notes: ['新增、移除不是改答案，而是標記已走過的格子'] } },
-    { title: '繼續掃描下一座島', explain: '前面的島已沉完，後面再遇到 1 才代表新的島。', codeLine: codeByPattern.array[3], variables: { row: 0, col: 3, islands: 2 }, visual: { kind: 'array', items: ['0', '0', '0', '1', '0'], pointers: [{ label: 'new island', index: 3, color: '#18E299' }], notes: ['島嶼題的圖應該跟 DFS 走訪同步變化'] } }
+      { title: '遇到第一塊陸地', explain: '掃描 grid，遇到第一個 1，島嶼數 +1，並從這格開始 DFS。', codeLine: 'int numberOfIslands(vector<vector<int>>& grid) {', variables: { row: 0, col: 0, islands: 1, current: '1' }, visual: { kind: 'array', items: ['1', '1', '0', '1', '0'], pointers: [{ label: 'DFS', index: 0, color: '#18E299' }], notes: ['這裡用一列壓縮圖表示 grid 的目前掃描列'] } },
+      { title: 'DFS 沉島', explain: '把相連的 1 標記成 visited/0，避免之後重複計算同一座島。', codeLine: '  for (int r = 0; r < rows; r++) {', variables: { visited: '(0,0),(0,1)', islands: 1, action: 'mark 1 -> 0' }, visual: { kind: 'array', items: ['0', '0', '0', '1', '0'], pointers: [{ label: 'visited', index: 0, color: '#a78bfa' }, { label: 'visited', index: 1, color: '#a78bfa' }], notes: ['新增、移除不是改答案，而是標記已走過的格子'] } },
+      { title: '繼續掃描下一座島', explain: '前面的島已沉完，後面再遇到 1 才代表新的島。', codeLine: '      grid[r][c] = processCell(grid, r, c);', variables: { row: 0, col: 3, islands: 2 }, visual: { kind: 'array', items: ['0', '0', '0', '1', '0'], pointers: [{ label: 'new island', index: 3, color: '#18E299' }], notes: ['島嶼題的圖應該跟 DFS 走訪同步變化'] } },
   ]
   if (raw.id === 'validate-binary-search-tree') return [
     { title: '測資：root = [5,1,4,null,null,3,6]', explain: '這是 LeetCode 常見反例。root=5，右子樹 root=4，但 4 小於 5，所以整棵樹不是 BST。先建立 isValid(root, LONG_MIN, LONG_MAX)。', codeLine: '  return valid(root, LONG_MIN, LONG_MAX);', variables: { call: 'valid(5, -∞, +∞)', node: 5, low: '-∞', high: '+∞', result: 'pending' }, visual: { kind: 'tree', nodes: [{ id: '5', value: 5, x: 50, y: 8, left: '1', right: '4', highlight: true }, { id: '1', value: 1, x: 28, y: 38 }, { id: '4', value: 4, x: 72, y: 38, left: '3', right: '6' }, { id: '3', value: 3, x: 62, y: 70 }, { id: '6', value: 6, x: 82, y: 70 }], pointers: [{ label: 'current=5', node: '5' }], notes: ['自訂/LeetCode 反例測資：[5,1,4,null,null,3,6]', '每個節點必須滿足 low < val < high'] } },
@@ -318,6 +318,23 @@ function stepsFor(raw: RawTutorial): Step[] {
   ])
 }
 
+function cppName(id: string): string {
+  return id.split('-').map((part, i) => i === 0 ? part : part[0].toUpperCase() + part.slice(1)).join('').replace(/[^A-Za-z0-9_]/g, '')
+}
+
+function fallbackCodeFor(raw: RawTutorial): string[] {
+  const name = cppName(raw.id)
+  if (raw.tags.includes('Tree')) return ['int dfs(TreeNode* node) {', '  if (node == nullptr) return 0;', '  int left = dfs(node->left);', '  int right = dfs(node->right);', '  int result = combine(node->val, left, right);', '  return result;', '}']
+  if (raw.tags.includes('DP')) return [`int ${name}(vector<int>& nums) {`, '  vector<int> dp(nums.size() + 1, 0);', '  dp[0] = 1;', '  for (int i = 1; i <= nums.size(); i++) {', '    dp[i] = max(dp[i - 1], dp[i]);', '  }', '  return dp.back();', '}']
+  if (raw.tags.includes('Matrix')) return [`int ${name}(vector<vector<int>>& grid) {`, '  int rows = grid.size(), cols = grid[0].size();', '  for (int r = 0; r < rows; r++) {', '    for (int c = 0; c < cols; c++) {', '      grid[r][c] = processCell(grid, r, c);', '    }', '  }', '  return rows * cols;', '}']
+  if (raw.tags.includes('String')) return [`int ${name}(string s) {`, '  vector<int> freq(128, 0);', '  int left = 0, best = 0;', '  for (int right = 0; right < s.size(); right++) {', '    freq[s[right]]++;', '    best = max(best, right - left + 1);', '  }', '  return best;', '}']
+  if (raw.tags.includes('Graph')) return [`int ${name}(int n, vector<vector<int>>& edges) {`, '  vector<vector<int>> graph(n);', '  vector<int> visited(n, 0);', '  for (auto& edge : edges) graph[edge[0]].push_back(edge[1]);', '  int answer = 0;', '  for (int node = 0; node < n; node++) answer += dfs(graph, visited, node);', '  return answer;', '}']
+  if (raw.tags.includes('Interval')) return [`vector<vector<int>> ${name}(vector<vector<int>>& intervals) {`, '  sort(intervals.begin(), intervals.end());', '  vector<vector<int>> merged;', '  for (auto& interval : intervals) {', '    if (merged.empty() || merged.back()[1] < interval[0]) merged.push_back(interval);', '    else merged.back()[1] = max(merged.back()[1], interval[1]);', '  }', '  return merged;', '}']
+  if (raw.tags.includes('Heap')) return [`vector<int> ${name}(vector<int>& nums, int k) {`, '  priority_queue<int> heap;', '  for (int x : nums) {', '    heap.push(x);', '    if (heap.size() > k) heap.pop();', '  }', '  return {heap.top()};', '}']
+  if (raw.tags.includes('Bit Manipulation')) return [`int ${name}(int a, int b) {`, '  while (b != 0) {', '    int carry = (a & b) << 1;', '    a = a ^ b;', '    b = carry;', '  }', '  return a;', '}']
+  return [`int ${name}(vector<int>& nums) {`, '  int answer = 0;', '  for (int i = 0; i < nums.size(); i++) {', '    int current = nums[i];', '    answer = max(answer, current);', '  }', '  return answer;', '}']
+}
+
 function codeFor(raw: RawTutorial): string[] {
   if (raw.id === 'two-sum') return ['vector<int> twoSum(vector<int>& nums, int target) {', '  unordered_map<int, int> seen;', '  for (int i = 0; i < nums.size(); i++) {', '    int need = target - nums[i];', '    if (seen.count(need)) return {seen[need], i};', '    seen[nums[i]] = i;', '  }', '  return {};', '}']
   if (raw.id === 'best-time-to-buy-and-sell-stock') return ['int maxProfit(vector<int>& prices) {', '  int minPrice = INT_MAX, maxProfit = 0;', '  for (int price : prices) {', '    maxProfit = max(maxProfit, price - minPrice);', '    minPrice = min(minPrice, price);', '  }', '  return maxProfit;', '}']
@@ -341,7 +358,7 @@ function codeFor(raw: RawTutorial): string[] {
   if (raw.id === 'remove-nth-node-from-end-of-list') return ['ListNode* removeNthFromEnd(ListNode* head, int n) {', '  ListNode dummy(0, head);', '  ListNode* fast = &dummy; ListNode* slow = &dummy;', '  for (int i = 0; i <= n; i++) fast = fast->next;', '  while (fast) {', '    fast = fast->next;', '    slow = slow->next;', '  }', '  slow->next = slow->next->next;', '  return dummy.next;', '}']
   if (raw.id === 'reorder-list') return ['void reorderList(ListNode* head) {', '  ListNode* slow = head; ListNode* fast = head;', '  while (fast && fast->next) {', '    slow = slow->next;', '    fast = fast->next->next;', '  }', '  ListNode* second = slow->next;', '  slow->next = nullptr;', '  second = reverse(second);', '  ListNode* first = head;', '  while (second) {', '    ListNode* firstNext = first->next;', '    ListNode* secondNext = second->next;', '    first->next = second;', '    second->next = firstNext;', '    first = firstNext;', '    second = secondNext;', '  }', '}']
   if (raw.id === 'validate-binary-search-tree') return ['bool isValidBST(TreeNode* root) {', '  return valid(root, LONG_MIN, LONG_MAX);', '}', 'bool valid(TreeNode* node, long low, long high) {', '  if (!node) return true;', '  if (node->val <= low || node->val >= high) return false;', '  return valid(node->left, low, node->val) && valid(node->right, node->val, high);', '}']
-  return codeByPattern[raw.pattern]
+  return fallbackCodeFor(raw)
 }
 
 function make(raw: RawTutorial): Tutorial {
