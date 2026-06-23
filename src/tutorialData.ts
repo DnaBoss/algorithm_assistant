@@ -273,10 +273,36 @@ function finishStep(raw: RawTutorial): Step {
   return { title: '回傳最終答案', explain: `測資跑完後，根據 ${raw.focus} 回傳答案。`, codeLine, variables: { done: true, answer: '最終答案', testcase: testcaseLabelFor(raw) }, visual: { kind: 'array', items, pointers: [{ label: 'answer', index: Math.min(1, items.length - 1), color: '#18E299' }], notes: ['最後用測資核對答案與邊界條件。'] } }
 }
 
+function targetStepCount(raw: RawTutorial): number {
+  if (raw.difficulty === 'Hard' && (raw.tags.includes('Graph') || raw.tags.includes('Tree') || raw.tags.includes('Backtracking') || raw.tags.includes('String'))) return 9
+  if (raw.difficulty === 'Hard') return 8
+  if (raw.difficulty === 'Medium' && (raw.tags.includes('Graph') || raw.tags.includes('DP') || raw.tags.includes('Tree') || raw.tags.includes('Backtracking') || raw.tags.includes('Matrix') || raw.tags.includes('Linked List'))) return 7
+  if (raw.difficulty === 'Medium') return 7
+  return 5
+}
+
+function expansionStep(raw: RawTutorial, index: number): Step {
+  const code = codeFor(raw)
+  const items = arrayItemsFor(raw)
+  const line = code[Math.min(2 + (index % Math.max(1, code.length - 3)), code.length - 2)] ?? code[0]
+  const titlePool = ['第二輪測資推進', '分支條件檢查', '邊界狀態檢查', '不變量核對']
+  const title = titlePool[index % titlePool.length]
+  if (raw.pattern === 'linked-list') return { title, explain: `依照 ${raw.operation} 繼續推進一個鏈表狀態，這題需要額外檢查指標是否斷鏈或接錯。`, codeLine: line, variables: { phase: title, prev: '上一個節點', cur: '目前節點', next: '保留後續', stepReason: raw.difficulty }, visual: { kind: 'linked-list', links: [{ id: 'a', value: 1, next: 'b' }, { id: 'b', value: 2, next: 'c', highlight: true }, { id: 'c', value: 3, next: null }], pointers: [{ label: 'cur', node: 'b' }], notes: ['額外步驟來自鏈表指標重接，不是固定模板。'] } }
+  if (raw.pattern === 'tree') return { title, explain: `樹題要多看一層遞迴回傳：${raw.operation}。`, codeLine: line, variables: { phase: title, current: 'child subtree', leftResult: '已知', rightResult: '待合併', stepReason: raw.difficulty }, visual: { kind: 'tree', nodes: sampleTreeNodes(index % 2 ? '2' : '7'), pointers: [{ label: 'extra recursion', node: index % 2 ? '2' : '7' }], notes: ['步數隨遞迴分支增加。'] } }
+  if (raw.pattern === 'stack') return { title, explain: `stack/heap 題要檢查 push/pop 後 top 是否仍滿足 ${raw.focus}。`, codeLine: line, variables: { phase: title, top: '目前 top', size: index + 2, answer: '可能更新' }, visual: { kind: 'stack', stack: ['候選', 'current', title], notes: ['額外步驟來自連續 pop/push 或 heap rebalance。'] } }
+  return { title, explain: `依測資再跑一個關鍵分支，檢查 ${raw.focus} 是否維持；${raw.operation}。`, codeLine: line, variables: { phase: title, i: index + 2, current: items[Math.min(index + 2, items.length - 1)] ?? '-', answer: '依分支更新', stepReason: raw.difficulty }, visual: { kind: 'array', items, pointers: [{ label: `i=${Math.min(index + 2, items.length - 1)}`, index: Math.min(index + 2, items.length - 1), color: '#18E299' }], notes: ['額外步數由題目難度、分類與測資分支決定。'] } }
+}
+
 function ensureMinimumSteps(raw: RawTutorial, steps: Step[]): Step[] {
-  if (steps.length >= 5) return steps
-  const expanded = [introStep(raw), ...steps, finishStep(raw)]
-  return expanded.length >= 5 ? expanded : [...expanded, finishStep(raw)]
+  let expanded = steps.length >= 5 ? [...steps] : [introStep(raw), ...steps, finishStep(raw)]
+  while (expanded.length < 5) expanded.push(finishStep(raw))
+  const target = targetStepCount(raw)
+  let insert = 0
+  while (expanded.length < target) {
+    const at = Math.max(1, expanded.length - 1)
+    expanded.splice(at, 0, expansionStep(raw, insert++))
+  }
+  return expanded
 }
 
 function stepsFor(raw: RawTutorial): Step[] {
