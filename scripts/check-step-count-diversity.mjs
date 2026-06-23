@@ -13,9 +13,12 @@ const fixedSixRatio = (histogram.get(6) ?? 0) / tutorials.length
 const distinctCounts = [...histogram.keys()].sort((a, b) => a - b)
 const hardTooShort = tutorials.filter(t => t.difficulty === 'Hard' && t.steps.length < 8).map(t => `${t.title}=${t.steps.length}`)
 const complexTooShort = tutorials.filter(t => (t.tags.includes('Graph') || t.tags.includes('DP') || t.tags.includes('Backtracking') || t.tags.includes('Tree')) && t.difficulty !== 'Easy' && t.steps.length < 7).map(t => `${t.title}=${t.steps.length}`)
+const coinChange = tutorials.find(t => t.id === 'coin-change')
+const coinChangeTooShallow = !coinChange || coinChange.steps.length < 14 || !coinChange.steps.some(s => s.title.includes('amount=11')) || !coinChange.steps.some(s => String(s.variables.dp ?? '').includes('0,1,1,2,2,1'))
 
-if (distinctCounts.length < 5) throw new Error(`Step counts must vary naturally; only saw counts ${distinctCounts.join(', ')}`)
+if (distinctCounts.length < 6) throw new Error(`Step counts must vary naturally and allow deep traces; only saw counts ${distinctCounts.join(', ')}`)
 if (fixedSixRatio > 0.45) throw new Error(`Too many tutorials are exactly 6 steps: ${histogram.get(6)}/${tutorials.length}`)
 if (hardTooShort.length) throw new Error(`Hard tutorials need 8+ dry-run steps:\n${hardTooShort.slice(0, 30).join('\n')}`)
 if (complexTooShort.length) throw new Error(`Complex non-easy tutorials need 7+ dry-run steps:\n${complexTooShort.slice(0, 40).join('\n')}`)
+if (coinChangeTooShallow) throw new Error(`Coin Change trace is too shallow; expected 14+ DP steps through amount=11, got ${coinChange?.steps.length ?? 0}`)
 console.log(`Step-count diversity check passed: counts ${distinctCounts.map(c => `${c}:${histogram.get(c)}`).join(', ')}`)
