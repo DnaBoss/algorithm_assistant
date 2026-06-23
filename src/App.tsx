@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import './App.css'
 import { tutorials, type Step } from './tutorialData'
+import { problemNumberFor, searchTutorials } from './search'
 
 const roadmap = [
   { title: 'Blind / LeetCode 75', body: '保留 75 題核心清單；每題都有思路、標籤、變數表與 dry-run 步驟。' },
@@ -31,9 +32,11 @@ function App() {
   const [selectedId, setSelectedId] = useState(tutorials[0].id)
   const [stepIndex, setStepIndex] = useState(0)
   const [showAllTags, setShowAllTags] = useState(false)
+  const [query, setQuery] = useState('')
   const allTags = useMemo(() => ['All', ...Array.from(new Set(tutorials.flatMap(t => t.tags))).sort()], [])
   const visibleTags = showAllTags ? allTags : primaryTags.filter(t => allTags.includes(t))
-  const filtered = tag === 'All' ? tutorials : tutorials.filter(t => t.tags.includes(tag))
+  const searched = useMemo(() => searchTutorials(tutorials, query), [query])
+  const filtered = (tag === 'All' ? searched : searched.filter(t => t.tags.includes(tag)))
   const tutorial = tutorials.find(t => t.id === selectedId) ?? filtered[0] ?? tutorials[0]
   const step = tutorial.steps[stepIndex] ?? tutorial.steps[0]
   const choose = (id: string) => { setSelectedId(id); setStepIndex(0) }
@@ -43,11 +46,18 @@ function App() {
     setSelectedId(nextFiltered[0]?.id ?? tutorials[0].id)
     setStepIndex(0)
   }
+  const changeQuery = (nextQuery: string) => {
+    const nextResults = searchTutorials(tutorials, nextQuery)
+    const nextFiltered = tag === 'All' ? nextResults : nextResults.filter(t => t.tags.includes(tag))
+    setQuery(nextQuery)
+    setSelectedId(nextFiltered[0]?.id ?? tutorials[0].id)
+    setStepIndex(0)
+  }
   return <main>
     <header className="nav"><div className="brand"><span className="logo">AL</span><span>Algo Lab</span></div><nav><a href="#tutorials">教程</a><a href="#roadmap">路線圖</a><a href="https://labuladong.online/zh/" target="_blank">靈感來源</a></nav></header>
     <section className="hero"><div className="hero-bg" /><p className="eyebrow">WHITEBOARD DRY RUN • ALGO LAB</p><h1>Algo Lab</h1><p className="lead">固定名稱的算法學習筆記本。目前收錄 LeetCode Top 150；每題都有多標籤、思路講解、當前變數表、白板式 dry-run 與上一頁/下一頁步驟。</p><div className="hero-actions"><a className="btn primary" href="#tutorials">開始學習</a><a className="btn secondary" href="#roadmap">查看內容規劃</a></div></section>
     <section className="stats"><div><b>{tutorials.length}</b><span>Top 150 題完整收錄</span></div><div><b>{allTags.length - 1}</b><span>可交叉查詢標籤</span></div><div><b>{filtered.length}</b><span>目前篩選結果</span></div></section>
-    <section id="tutorials" className="layout"><aside className="sidebar"><div className="sidebar-head"><div><h2>題目索引</h2><p>選分類會自動打開該分類第一題</p></div><button className="tag-toggle" onClick={() => setShowAllTags(!showAllTags)}>{showAllTags ? '收合標籤' : `更多標籤 (${allTags.length - primaryTags.length})`}</button></div><div className="active-filter">目前：<b>{tag}</b> · {filtered.length} 題</div><div className="filter">{visibleTags.map(t => <button key={t} onClick={() => chooseTag(t)} className={tag === t ? 'selected' : ''}>{t}</button>)}</div><div className="cards">{filtered.map(t => <button key={t.id} onClick={() => choose(t.id)} className={'problem-card ' + (t.id === tutorial.id ? 'active' : '')}><span>{t.group}</span><b>{t.title}</b><small>{t.summary}</small></button>)}</div></aside>
+    <section id="tutorials" className="layout"><aside className="sidebar"><div className="sidebar-head"><div><h2>題目索引</h2><p>可用 LeetCode 題號或題名 fuzzy search</p></div><button className="tag-toggle" onClick={() => setShowAllTags(!showAllTags)}>{showAllTags ? '收合標籤' : `更多標籤 (${allTags.length - primaryTags.length})`}</button></div><label className="search-box"><span>搜尋題目</span><input value={query} onChange={e => changeQuery(e.target.value)} placeholder="例：1、146、coin chnage、valid bst" /></label><div className="active-filter">目前：<b>{tag}</b> · {filtered.length} 題{query && <em> · 搜尋「{query}」</em>}</div><div className="filter">{visibleTags.map(t => <button key={t} onClick={() => chooseTag(t)} className={tag === t ? 'selected' : ''}>{t}</button>)}</div><div className="cards">{filtered.map(t => <button key={t.id} onClick={() => choose(t.id)} className={'problem-card ' + (t.id === tutorial.id ? 'active' : '')}><span>#{problemNumberFor(t.id) ?? '—'} · {t.group}</span><b>{t.title}</b><small>{t.summary}</small></button>)}</div></aside>
       <article className="lesson"><div className="lesson-head"><div><p className="eyebrow">{tutorial.group} • {tutorial.difficulty}</p><h2>{tutorial.title}</h2><p>{tutorial.summary}</p></div><Tags tags={tutorial.tags} /></div>
         <div className="idea"><h3>思路講解</h3><ol>{tutorial.idea.map(i => <li key={i}>{i}</li>)}</ol><p className="complexity">{tutorial.complexity}</p></div>
         <div className="dryrun"><div className="step-panel"><div className="step-top"><span>Step {stepIndex + 1}/{tutorial.steps.length}</span><h3>{step.title}</h3><p>{step.explain}</p></div><Visualizer step={step} /><div className="controls"><button onClick={() => setStepIndex(Math.max(0, stepIndex - 1))} disabled={stepIndex === 0}>← 上一步</button><button onClick={() => setStepIndex(Math.min(tutorial.steps.length - 1, stepIndex + 1))} disabled={stepIndex === tutorial.steps.length - 1}>下一步 →</button></div></div>
