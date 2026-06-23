@@ -362,9 +362,12 @@ function codeFor(raw: RawTutorial): string[] {
 }
 
 function make(raw: RawTutorial): Tutorial {
+  const isTopOnly = raw.tags.includes('Top 150 Only')
+  const contentTags = raw.tags.filter(t => t !== 'Top 150 Only')
+  const planTags = isTopOnly ? ['LeetCode Top 150', 'Top 150'] : ['Blind 75', 'LeetCode 75', 'LeetCode Top 150', 'Top 150']
   return {
     ...raw,
-    tags: ['Blind 75', 'LeetCode 75', ...raw.tags],
+    tags: [...planTags, ...contentTags],
     idea: [`核心觀念：${raw.focus}。`, `白板推演時固定追蹤目前指標 / 節點與答案狀態。`, `每一步只做一個動作：${raw.operation}，再檢查不變量是否仍成立。`],
     code: codeFor(raw),
     complexity: raw.pattern === 'tree' ? 'Time O(n), Space O(h)' : raw.pattern === 'linked-list' ? 'Time O(n), Space O(1)' : raw.pattern === 'stack' ? 'Time O(n), Space O(n)' : 'Time O(n), Space O(n) 或依排序/二分條件調整',
@@ -450,5 +453,87 @@ const rawTutorials: RawTutorial[] = [
   { id: 'find-median-from-data-stream', title: 'Find Median from Data Stream', difficulty: 'Hard', group: 'Heap / Design', summary: '用最大堆保存較小半、最小堆保存較大半，保持平衡。', tags: ['Heap', 'Design', 'Hard'], pattern: 'stack', focus: '兩個 heap 的大小與頂端', operation: '插入後重新平衡；中位數由 heap top 得到' }
 ]
 
-export const tutorials: Tutorial[] = rawTutorials.map(make)
-export const blind75Count = tutorials.length
+type ExtraTuple = [string, string, Tutorial['difficulty'], string, string, string[], VisualKind, string, string]
+const top150ExtraTutorials: RawTutorial[] = ([
+  ['merge-sorted-array', 'Merge Sorted Array', 'Easy', 'Array / Two Pointers', '從尾端比較 nums1/nums2，把較大的數放到 nums1 末端。', ['Array', 'Two Pointers'], 'array', '三指標 i/j/write', '比較 nums1[i] 與 nums2[j]，從後往前寫入'],
+  ['remove-element', 'Remove Element', 'Easy', 'Array / Two Pointers', '原地移除等於 val 的元素，回傳新長度。', ['Array', 'Two Pointers'], 'array', 'write 指標', '遇到不等於 val 的元素就寫到 nums[write++]'],
+  ['remove-duplicates-from-sorted-array', 'Remove Duplicates from Sorted Array', 'Easy', 'Array / Two Pointers', '排序陣列中保留每個值一次。', ['Array', 'Two Pointers'], 'array', 'slow/write 去重', '新值出現時寫到下一個保留位置'],
+  ['remove-duplicates-from-sorted-array-ii', 'Remove Duplicates from Sorted Array II', 'Medium', 'Array / Two Pointers', '排序陣列中每個值最多保留兩次。', ['Array', 'Two Pointers'], 'array', '最多兩次去重', '若 nums[i] != nums[write-2] 才保留'],
+  ['majority-element', 'Majority Element', 'Easy', 'Array / Boyer-Moore', '用 Boyer-Moore 投票找出過半元素。', ['Array', 'Voting'], 'array', 'candidate 與 count', 'count 歸零時更換 candidate，遇同值加一否則減一'],
+  ['rotate-array', 'Rotate Array', 'Medium', 'Array', '用三次反轉把陣列向右旋轉 k 位。', ['Array', 'Two Pointers'], 'array', 'reverse 區間', 'reverse 全陣列、前 k、後 n-k'],
+  ['best-time-to-buy-and-sell-stock-ii', 'Best Time to Buy and Sell Stock II', 'Medium', 'Array / Greedy', '累加所有上漲區間利潤。', ['Array', 'Greedy'], 'array', 'positive diff', '若 prices[i] > prices[i-1] 就把差額加入 profit'],
+  ['h-index', 'H-Index', 'Medium', 'Array / Sorting', '排序引用數後找出最大 h。', ['Array', 'Sorting'], 'array', '引用數與篇數', '從小到大檢查 citations[i] >= n-i'],
+  ['insert-delete-getrandom-o1', 'Insert Delete GetRandom O(1)', 'Medium', 'Design / Hash Map', '用 vector 加 hash map 支援 O(1) 插入刪除隨機取值。', ['Design', 'Hash Map', 'Array'], 'array', 'value 到 index', '刪除時用最後元素覆蓋目標位置並更新 index'],
+  ['gas-station', 'Gas Station', 'Medium', 'Array / Greedy', '若總油量足夠，從累積油量變負的下一站重新開始。', ['Array', 'Greedy'], 'array', 'tank 與 start', 'tank 變負時 start=i+1 並重置 tank'],
+  ['candy', 'Candy', 'Hard', 'Greedy', '左右兩趟掃描滿足評分較高糖果更多。', ['Greedy', 'Array', 'Hard'], 'array', 'left/right candy', '左到右處理上升，右到左處理下降'],
+  ['trapping-rain-water', 'Trapping Rain Water', 'Hard', 'Two Pointers', '左右最大高度決定每格可接水量。', ['Array', 'Two Pointers', 'Hard'], 'array', 'leftMax/rightMax', '移動較低的一側並累加可接水'],
+  ['roman-to-integer', 'Roman to Integer', 'Easy', 'String', '若目前羅馬字小於右邊則扣，否則加。', ['String', 'Hash Map'], 'array', '目前符號與右側符號', '比較 value[i] 與 value[i+1] 決定加減'],
+  ['integer-to-roman', 'Integer to Roman', 'Medium', 'String / Greedy', '由大到小貪心扣除羅馬數值。', ['String', 'Greedy'], 'array', 'value-symbol table', '能扣就加入對應 symbol 並減少 num'],
+  ['length-of-last-word', 'Length of Last Word', 'Easy', 'String', '從尾端略過空白後計算最後一個單字長度。', ['String'], 'array', '尾端指標', '先跳空白，再數非空白字元'],
+  ['longest-common-prefix', 'Longest Common Prefix', 'Easy', 'String', '逐字比較所有字串同一位置。', ['String'], 'array', 'prefix index', '任一字串結束或字元不同就停止'],
+  ['reverse-words-in-a-string', 'Reverse Words in a String', 'Medium', 'String / Two Pointers', '切分單字後反向組合並移除多餘空白。', ['String', 'Two Pointers'], 'array', 'words 陣列', '掃描出 word 後反向 join'],
+  ['zigzag-conversion', 'Zigzag Conversion', 'Medium', 'String / Simulation', '按方向在多列間上下移動收集字元。', ['String'], 'array', 'row 與 direction', '到頂/到底時反轉方向'],
+  ['find-the-index-of-the-first-occurrence-in-a-string', 'Find the Index of the First Occurrence in a String', 'Easy', 'String Matching', '滑動比較 haystack 子字串與 needle。', ['String', 'Two Pointers'], 'array', '起點 i 與匹配 j', '逐一嘗試起點直到完全匹配'],
+  ['text-justification', 'Text Justification', 'Hard', 'String / Greedy', '每行貪心放入可容納單字，再平均分配空格。', ['String', 'Greedy', 'Hard'], 'array', 'line words 與 spaces', '計算 gaps 與 extra spaces 產生一行'],
+  ['ransom-note', 'Ransom Note', 'Easy', 'Hash Map / String', '用 magazine 字元計數檢查 ransomNote 能否組成。', ['String', 'Hash Map'], 'array', '字元需求計數', '先統計 magazine，再扣 ransomNote'],
+  ['isomorphic-strings', 'Isomorphic Strings', 'Easy', 'Hash Map / String', '雙向映射確保兩字串字元一一對應。', ['String', 'Hash Map'], 'array', '雙向 map', '若映射衝突則 false'],
+  ['word-pattern', 'Word Pattern', 'Easy', 'Hash Map / String', 'pattern 字元與單字需形成雙向一對一映射。', ['String', 'Hash Map'], 'array', 'pattern-to-word map', '逐位檢查雙向映射一致性'],
+  ['happy-number', 'Happy Number', 'Easy', 'Hash Set / Math', '反覆計算各位平方和，遇到 1 或循環。', ['Math', 'Hash Set'], 'array', 'seen sums', 'sumOfSquares 重複出現表示不是 happy'],
+  ['plus-one', 'Plus One', 'Easy', 'Array / Math', '從尾端處理進位。', ['Array', 'Math'], 'array', 'carry', '若 digit < 9 直接加一，否則變 0 進位'],
+  ['sqrtx', 'Sqrt(x)', 'Easy', 'Binary Search', '二分搜尋最大 mid 使 mid*mid <= x。', ['Binary Search', 'Math'], 'array', 'left/right/mid', '根據 mid*mid 與 x 移動邊界'],
+  ['add-binary', 'Add Binary', 'Easy', 'String / Bit', '從尾端加兩個二進位字串與 carry。', ['String', 'Bit Manipulation'], 'array', 'i/j/carry', 'sum = bitA + bitB + carry'],
+  ['reverse-nodes-in-k-group', 'Reverse Nodes in k-Group', 'Hard', 'Linked List', '每 k 個節點一組反轉，不足 k 個保持原樣。', ['Linked List', 'Hard'], 'linked-list', 'groupPrev/groupNext', '找到第 k 個節點後局部反轉並接回'],
+  ['partition-list', 'Partition List', 'Medium', 'Linked List', '小於 x 與大於等於 x 分成兩條鏈再串接。', ['Linked List', 'Two Pointers'], 'linked-list', 'before/after dummy', '依節點值接到 before 或 after 鏈表'],
+  ['lru-cache', 'LRU Cache', 'Medium', 'Design / Linked List', 'Hash map 加雙向鏈表讓 get/put 為 O(1)。', ['Design', 'Hash Map', 'Linked List'], 'linked-list', '最近使用順序', '命中節點移到頭部，容量滿時移除尾部'],
+  ['minimum-size-subarray-sum', 'Minimum Size Subarray Sum', 'Medium', 'Sliding Window', '右端擴張直到 sum>=target，再左端收縮更新最短。', ['Array', 'Sliding Window'], 'array', 'left/right/sum', 'while sum >= target 更新 best 並移動 left'],
+  ['two-sum-ii-input-array-is-sorted', 'Two Sum II - Input Array Is Sorted', 'Medium', 'Two Pointers', '排序陣列用左右指標夾逼 target。', ['Array', 'Two Pointers'], 'array', 'left/right sum', 'sum 太小 left++，太大 right--'],
+  ['contains-duplicate-ii', 'Contains Duplicate II', 'Easy', 'Hash Map / Sliding Window', '記錄每個值最近索引，檢查距離是否 <= k。', ['Array', 'Hash Map', 'Sliding Window'], 'array', 'last seen index', '若 i-last[x] <= k 回傳 true'],
+  ['summary-ranges', 'Summary Ranges', 'Easy', 'Array', '連續數字壓成區間字串。', ['Array'], 'array', 'range start/end', '當下一個數不連續時輸出目前 range'],
+  ['min-stack', 'Min Stack', 'Medium', 'Stack / Design', '主 stack 與 min stack 同步維護目前最小值。', ['Stack', 'Design'], 'stack', 'stack top 與 min top', 'push 時同步記錄 min，pop 時同步移除'],
+  ['evaluate-reverse-polish-notation', 'Evaluate Reverse Polish Notation', 'Medium', 'Stack', '遇數字 push，遇運算子 pop 兩數計算後 push。', ['Stack', 'Array'], 'stack', 'operand stack', 'operator 取出 b/a 後推回 a op b'],
+  ['basic-calculator', 'Basic Calculator', 'Hard', 'Stack / String', '用 stack 保存括號前的 result 與 sign。', ['Stack', 'String', 'Hard'], 'stack', 'result/sign stack', '遇左括號保存狀態，右括號彈出合併'],
+  ['simplify-path', 'Simplify Path', 'Medium', 'Stack / String', '用 stack 處理 Unix path 的 . 與 ..。', ['Stack', 'String'], 'stack', 'path segments', '普通資料夾 push，.. pop'],
+  ['game-of-life', 'Game of Life', 'Medium', 'Matrix / Simulation', '用原地狀態編碼同時計算下一代。', ['Matrix', 'Array'], 'array', 'live neighbors', '根據八鄰居活細胞數決定下一狀態'],
+  ['surrounded-regions', 'Surrounded Regions', 'Medium', 'Matrix / DFS', '從邊界 O 出發標記安全區，剩餘 O 翻成 X。', ['Matrix', 'DFS'], 'array', 'border-safe cells', '邊界 DFS 標記後翻轉未標記 O'],
+  ['snakes-and-ladders', 'Snakes and Ladders', 'Medium', 'BFS', '把棋盤編號後 BFS 最少擲骰次數。', ['Graph', 'BFS'], 'tree', 'BFS queue', '每次從格子擴展 1..6 並套用蛇梯跳轉'],
+  ['minimum-genetic-mutation', 'Minimum Genetic Mutation', 'Medium', 'BFS', '基因字串每次改一位，用 BFS 找最少突變。', ['Graph', 'BFS', 'String'], 'tree', 'mutation BFS', '枚舉每個位置的 A/C/G/T 並檢查 bank'],
+  ['word-ladder', 'Word Ladder', 'Hard', 'BFS', '單字每次改一字母，用 BFS 找最短轉換長度。', ['Graph', 'BFS', 'String', 'Hard'], 'tree', 'word BFS level', '枚舉鄰近單字並按 level 擴展'],
+  ['average-of-levels-in-binary-tree', 'Average of Levels in Binary Tree', 'Easy', 'Tree / BFS', '層序遍歷時計算每層平均值。', ['Tree', 'BFS'], 'tree', 'level sum/count', '固定 queue size 處理一層'],
+  ['symmetric-tree', 'Symmetric Tree', 'Easy', 'Tree / DFS', '左右子樹鏡像比較。', ['Tree', 'DFS'], 'tree', 'mirror pair', 'left.left 對 right.right，left.right 對 right.left'],
+  ['path-sum', 'Path Sum', 'Easy', 'Tree / DFS', '沿 root-to-leaf 扣除目標和。', ['Tree', 'DFS'], 'tree', 'remaining sum', '到葉節點時檢查剩餘值是否等於節點值'],
+  ['count-complete-tree-nodes', 'Count Complete Tree Nodes', 'Medium', 'Tree / Binary Search', '利用完全二元樹高度判斷滿樹子樹。', ['Tree', 'Binary Search'], 'tree', 'left/right height', '高度相同時計算滿樹節點數，否則遞迴'],
+  ['binary-tree-right-side-view', 'Binary Tree Right Side View', 'Medium', 'Tree / BFS', '層序遍歷取每層最後一個節點。', ['Tree', 'BFS'], 'tree', 'level last node', '每層最後 pop 的節點加入答案'],
+  ['flatten-binary-tree-to-linked-list', 'Flatten Binary Tree to Linked List', 'Medium', 'Tree / Linked List', '前序順序把樹原地展平成右指標鏈。', ['Tree', 'Linked List'], 'tree', 'preorder prev', 'prev.right = current，left 清空'],
+  ['populating-next-right-pointers-in-each-node-ii', 'Populating Next Right Pointers in Each Node II', 'Medium', 'Tree / BFS', '逐層把 next 指向右側節點。', ['Tree', 'BFS'], 'tree', 'level next pointers', '同層前一節點 prev.next = current'],
+  ['search-insert-position', 'Search Insert Position', 'Easy', 'Binary Search', '二分找第一個 >= target 的位置。', ['Array', 'Binary Search'], 'array', 'lower_bound', 'nums[mid] < target 則 left=mid+1 否則 right=mid'],
+  ['find-peak-element', 'Find Peak Element', 'Medium', 'Binary Search', '比較 nums[mid] 與 nums[mid+1] 判斷峰值方向。', ['Array', 'Binary Search'], 'array', 'slope direction', '上坡往右，下坡峰值在左含 mid'],
+  ['search-a-2d-matrix', 'Search a 2D Matrix', 'Medium', 'Matrix / Binary Search', '把矩陣視為一維有序陣列二分。', ['Matrix', 'Binary Search'], 'array', 'virtual index', 'mid 映射成 row=mid/n col=mid%n'],
+  ['sort-list', 'Sort List', 'Medium', 'Linked List / Merge Sort', '鏈表用快慢指標切半後 merge sort。', ['Linked List', 'Sorting'], 'linked-list', 'split and merge', '找中點切開，排序左右後 merge'],
+  ['edit-distance', 'Edit Distance', 'Medium', 'Dynamic Programming', '二維 DP 計算插入刪除替換最少次數。', ['DP', 'String'], 'array', 'dp[i][j]', '若字元不同取 insert/delete/replace 最小 +1'],
+  ['remove-duplicates-from-sorted-list-ii', 'Remove Duplicates from Sorted List II', 'Medium', 'Linked List', '刪除所有重複值節點，只保留完全不重複的值。', ['Linked List'], 'linked-list', 'dummy 與重複區間', '遇到連續相同值時 prev.next 跳過整段'],
+  ['rotate-list', 'Rotate List', 'Medium', 'Linked List', '把鏈表尾端 k 個節點移到前面。', ['Linked List', 'Two Pointers'], 'linked-list', 'length/newTail', '先成環，再在新尾斷開'],
+  ['copy-list-with-random-pointer', 'Copy List with Random Pointer', 'Medium', 'Linked List / Hash Map', '用 map 建立原節點到新節點對應，再補 next/random。', ['Linked List', 'Hash Map'], 'linked-list', 'old-to-new map', '先複製節點，再設定 next/random 指標'],
+  ['single-number', 'Single Number', 'Easy', 'Bit Manipulation', '所有數 XOR 後成對抵消，只剩單一數。', ['Bit Manipulation', 'Array'], 'array', 'xor accumulator', 'answer ^= nums[i]'],
+  ['bitwise-and-of-numbers-range', 'Bitwise AND of Numbers Range', 'Medium', 'Bit Manipulation', '找 left/right 共同前綴。', ['Bit Manipulation'], 'array', 'common prefix', 'right 不斷清最低位 1 直到 right <= left'],
+  ['palindrome-number', 'Palindrome Number', 'Easy', 'Math', '反轉後半數字與前半比較。', ['Math'], 'array', 'reversed half', '每輪把 x 的末位移到 reversed'],
+  ['factorial-trailing-zeroes', 'Factorial Trailing Zeroes', 'Medium', 'Math', '尾零數等於因子 5 的總數。', ['Math'], 'array', 'factor 5 count', 'n/=5 累加商'],
+  ['powx-n', 'Pow(x, n)', 'Medium', 'Math / Fast Power', '快速冪用二分指數。', ['Math', 'Recursion'], 'array', 'base/exponent/result', '指數奇數乘 result，base 平方，n 右移'],
+  ['max-points-on-a-line', 'Max Points on a Line', 'Hard', 'Hash Map / Geometry', '固定一點統計與其他點的斜率。', ['Hash Map', 'Math', 'Hard'], 'array', 'slope count', '用 gcd 正規化 dx/dy 當 key'],
+  ['minimum-path-sum', 'Minimum Path Sum', 'Medium', 'Dynamic Programming / Matrix', '每格最小路徑和來自上方或左方。', ['DP', 'Matrix'], 'array', 'grid dp', 'grid[r][c]+=min(top,left)'],
+  ['triangle', 'Triangle', 'Medium', 'Dynamic Programming', '自底向上壓縮 DP 求最小路徑。', ['DP'], 'array', 'bottom-up dp', 'dp[c]=triangle[r][c]+min(dp[c],dp[c+1])'],
+  ['n-queens-ii', 'N-Queens II', 'Hard', 'Backtracking', '用 columns/diagonals 集合回溯計數合法皇后擺法。', ['Backtracking', 'Hard'], 'array', 'columns and diagonals', '逐列嘗試安全欄位，遞迴下一列'],
+  ['combinations', 'Combinations', 'Medium', 'Backtracking', '從 1..n 選 k 個數的所有組合。', ['Backtracking'], 'array', 'path 與 start', '選一個數後遞迴 start+1'],
+  ['permutations', 'Permutations', 'Medium', 'Backtracking', '用 used 陣列產生所有排列。', ['Backtracking'], 'array', 'path/used', '每層選一個尚未使用的數'],
+  ['combination-sum', 'Combination Sum', 'Medium', 'Backtracking', '可重複使用候選數字湊 target。', ['Backtracking', 'Array'], 'array', 'remain target', '選 candidates[i] 後可停留同一 i'],
+  ['generate-parentheses', 'Generate Parentheses', 'Medium', 'Backtracking', '追蹤 left/right 已使用數產生合法括號。', ['Backtracking', 'String'], 'array', 'open/close count', 'open<n 可加左括號，close<open 可加右括號'],
+  ['letter-combinations-of-a-phone-number', 'Letter Combinations of a Phone Number', 'Medium', 'Backtracking / String', '數字映射字母後逐位展開所有組合。', ['Backtracking', 'String'], 'array', 'digit index/path', '對目前 digit 的每個字母遞迴下一位'],
+  ['subsets', 'Subsets', 'Medium', 'Backtracking', '每個元素選或不選，產生所有子集。', ['Backtracking', 'Array'], 'array', 'path/start', '先收集目前 path，再枚舉下一個選擇'],
+  ['course-schedule-ii', 'Course Schedule II', 'Medium', 'Graph / Topological Sort', '拓撲排序輸出可行課程順序。', ['Graph', 'Topological Sort'], 'tree', 'indegree queue', '入度為 0 入隊，移除邊後產生新 0 入度'],
+  ['evaluate-division', 'Evaluate Division', 'Medium', 'Graph / DFS', '把等式建成帶權圖，查詢時 DFS 累乘權重。', ['Graph', 'DFS'], 'tree', 'weighted graph path', 'a/b 與 b/a 建邊，查詢找路徑乘積']
+] as ExtraTuple[]).map(([id, title, difficulty, group, summary, tags, pattern, focus, operation]) => ({ id, title, difficulty, group, summary, tags: ['Top 150 Only', ...tags], pattern, focus, operation }))
+
+const allTutorials = [...rawTutorials, ...top150ExtraTutorials]
+
+export const tutorials: Tutorial[] = allTutorials.map(make)
+export const blind75Count = rawTutorials.length
+export const top150Count = tutorials.length

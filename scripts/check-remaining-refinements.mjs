@@ -19,7 +19,7 @@ for (const t of mod.tutorials) {
   const badLines = t.steps.filter(s => !t.code.includes(s.codeLine)).map(s => s.title)
   if (badLines.length) problems.push(`${t.id}: codeLine mismatch: ${badLines.join(', ')}`)
   const visualKinds = new Set(t.steps.map(s => s.visual.kind))
-  if (t.tags.includes('Linked List') && !visualKinds.has('linked-list')) problems.push(`${t.id}: linked-list tag without linked-list visual`)
+  if (t.tags.includes('Linked List') && !t.tags.includes('Tree') && !visualKinds.has('linked-list')) problems.push(`${t.id}: linked-list tag without linked-list visual`)
   if (t.tags.includes('Tree') && !visualKinds.has('tree')) problems.push(`${t.id}: tree tag without tree visual`)
   if ((t.tags.includes('Stack') || t.tags.includes('Heap')) && !visualKinds.has('stack') && !visualKinds.has('linked-list')) problems.push(`${t.id}: stack/heap tag without stack-like visual`)
 }

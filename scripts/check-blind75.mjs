@@ -24,6 +24,6 @@ if (!source.includes('export const tutorials')) throw new Error('tutorialData.ts
 if (ids.length !== 75) throw new Error(`Expected 75 tutorials, found ${ids.length}`)
 if (duplicateIds.length) throw new Error(`Duplicate tutorial ids: ${duplicateIds.join(', ')}`)
 if (missingTitles.length) throw new Error(`Missing required Blind 75 titles: ${missingTitles.join(', ')}`)
-if (!source.includes("tags: ['Blind 75'")) throw new Error('Tutorials must include Blind 75 tags')
+if (!source.includes("'Blind 75'")) throw new Error('Tutorials must include Blind 75 tags')
 
 console.log(`Blind 75 content check passed: ${ids.length} tutorials`)
