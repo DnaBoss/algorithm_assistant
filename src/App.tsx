@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import './App.css'
 import { tutorials, type Step, type Tutorial } from './tutorialData'
 import { problemNumberFor, searchTutorials } from './search'
+import { problemBank, problemBankMeta } from './problemBank'
 
-type TrackId = 'blind75' | 'top150' | 'db' | 'categories' | 'multi-tags'
+type TrackId = 'blind75' | 'top150' | 'problem-bank' | 'db' | 'categories' | 'multi-tags'
 
 type Track = {
   id: TrackId
@@ -33,6 +34,13 @@ const tracks: Track[] = [
     description: '收斂到 Top 150 題目清單；適合用搜尋、題號與 tag 交叉安排每日練習。',
     filter: tutorial => tutorial.tags.includes('Top 150') || tutorial.tags.includes('LeetCode Top 150'),
     actions: ['用題號快速定位', '依難度補齊清單', '逐題 dry-run 檢查理解']
+  },
+  {
+    id: 'problem-bank',
+    title: '題庫 / Rating',
+    subtitle: '全題庫與週賽 rating',
+    description: '整合 LeetCode 全題索引、Zerotrac 週賽 rating、常見高頻題與目前已有教學題。',
+    actions: ['用 rating 區間選題', '看週賽 Q1-Q4', '篩常見高價值題']
   },
   {
     id: 'db',
@@ -80,6 +88,10 @@ function App() {
   const [showAllTags, setShowAllTags] = useState(false)
   const [query, setQuery] = useState('')
   const [activeTrackId, setActiveTrackId] = useState<TrackId | null>(null)
+  const [bankQuery, setBankQuery] = useState('')
+  const [minRating, setMinRating] = useState(1200)
+  const [maxRating, setMaxRating] = useState(2200)
+  const [bankMode, setBankMode] = useState<'high-value' | 'contest' | 'all'>('high-value')
 
   const allTags = useMemo(() => ['All', ...Array.from(new Set(tutorials.flatMap(t => t.tags))).sort()], [])
   const tagCounts = useMemo(() => Object.fromEntries(allTags.map(t => [t, t === 'All' ? tutorials.length : tutorials.filter(item => item.tags.includes(t)).length])), [allTags])
@@ -90,6 +102,15 @@ function App() {
   const step = tutorial.steps[stepIndex] ?? tutorial.steps[0]
   const activeTrack = tracks.find(track => track.id === activeTrackId) ?? null
   const trackTutorials = activeTrack?.filter ? tutorials.filter(activeTrack.filter) : []
+  const ratingFilteredProblems = useMemo(() => {
+    const q = bankQuery.trim().toLowerCase()
+    return problemBank
+      .filter(p => bankMode === 'all' || (bankMode === 'contest' ? Boolean(p.contest) : p.highValue))
+      .filter(p => !p.rating || (p.rating >= minRating && p.rating <= maxRating))
+      .filter(p => !q || p.id.includes(q) || p.title.toLowerCase().includes(q) || p.slug.includes(q) || p.contest?.toLowerCase().includes(q))
+      .sort((a, b) => Number(Boolean(b.hasTutorial)) - Number(Boolean(a.hasTutorial)) || Number(Boolean(b.highValue)) - Number(Boolean(a.highValue)) || (a.rating ?? 9999) - (b.rating ?? 9999) || Number(a.id) - Number(b.id))
+      .slice(0, 300)
+  }, [bankMode, bankQuery, minRating, maxRating])
 
   const choose = (id: string) => { setSelectedId(id); setStepIndex(0) }
   const chooseTag = (nextTag: string) => {
@@ -118,6 +139,7 @@ function App() {
       {activeTrack.id === 'db' && <div className="db-modules"><article><h3>SQL dry-run</h3><p>用一張表、一個 WHERE 條件開始，顯示掃描列、過濾列與輸出列。</p></article><article><h3>Index / EXPLAIN</h3><p>對照 full scan 與 index scan，標出 cost、rows 與命中條件。</p></article><article><h3>JOIN 中間表</h3><p>逐步顯示 nested loop / hash join 的中間結果與 row 數變化。</p></article></div>}
       {activeTrack.id === 'categories' && <div className="category-grid">{categoryTags.filter(t => tagCounts[t]).map(t => <button key={t} onClick={() => selectTrackTag(t)}><b>{t}</b><span>{tagCounts[t]} 題</span></button>)}</div>}
       {activeTrack.id === 'multi-tags' && <div className="category-grid tag-index">{allTags.filter(t => t !== 'All').map(t => <button key={t} onClick={() => selectTrackTag(t)}><b>{t}</b><span>{tagCounts[t]} 題</span></button>)}</div>}
+      {activeTrack.id === 'problem-bank' && <div className="problem-bank" data-testid="problem-bank"><div className="bank-summary"><b>{problemBankMeta.total}</b><span>LeetCode 全題</span><b>{problemBankMeta.ratedContestProblems}</b><span>週賽 / rating 題</span><b>{problemBankMeta.highValueProblems}</b><span>高價值候選</span></div><div className="bank-controls"><label>搜尋<input value={bankQuery} onChange={e => setBankQuery(e.target.value)} placeholder="題號、題名、contest" /></label><label>最低 rating<input type="number" value={minRating} onChange={e => setMinRating(Number(e.target.value))} /></label><label>最高 rating<input type="number" value={maxRating} onChange={e => setMaxRating(Number(e.target.value))} /></label><select value={bankMode} onChange={e => setBankMode(e.target.value as 'high-value' | 'contest' | 'all')}><option value="high-value">常見 / 高價值</option><option value="contest">所有週賽 rating 題</option><option value="all">LeetCode 全題</option></select></div><div className="bank-results">{ratingFilteredProblems.map(p => <a key={p.slug} href={`https://leetcode.com/problems/${p.slug}/`} target="_blank"><span>#{p.id} · {p.difficulty}{p.rating ? ` · rating ${p.rating}` : ''}</span><b>{p.title}</b><small>{p.contest ? `${p.contest} ${p.problemIndex}` : '非 rating 題'}{p.reasons.length ? ` · ${p.reasons.join(' / ')}` : ''}</small></a>)}</div></div>}
       {trackTutorials.length > 0 && <div className="track-lessons">{trackTutorials.map(t => <button key={t.id} onClick={() => openLessonFromTrack(t.id)}><span>#{problemNumberFor(t.id) ?? '—'} · {t.group}</span><b>{t.title}</b><small>{t.summary}</small></button>)}</div>}
     </section>}
 
