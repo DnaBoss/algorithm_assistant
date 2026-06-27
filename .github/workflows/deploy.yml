@@ -102,6 +102,12 @@ jobs:
           EOF
           chmod 600 "$HOME/.ssh/config"
 
+      - name: Show SSH deploy key fingerprint
+        run: |
+          set -euo pipefail
+          ssh-keygen -y -f "$HOME/.ssh/deploy_key" > "$HOME/.ssh/deploy_key.pub"
+          ssh-keygen -lf "$HOME/.ssh/deploy_key.pub"
+
       - name: Verify SSH route
         run: |
           set -euo pipefail
