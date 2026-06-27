@@ -26,3 +26,7 @@ npm install
 npm run dev
 npm run build
 ```
+
+All normal development should start from `develop`, continue on a short-lived
+topic branch, and merge back into `develop` after checks pass. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the full Git flow.
