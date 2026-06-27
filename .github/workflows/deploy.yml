@@ -111,7 +111,10 @@ jobs:
       - name: Verify SSH route
         run: |
           set -euo pipefail
-          ssh bastion 'echo "bastion ok: $(hostname)"'
+          ssh -vvv bastion 'echo "bastion ok: $(hostname)"' 2>ssh-bastion-debug.log || {
+            grep -E 'Authenticating|Offering public key|Server accepts key|Permission denied|Authentications that can continue|No more authentication methods' ssh-bastion-debug.log || true
+            exit 1
+          }
           ssh essence 'echo "essence ok: $(hostname)"'
 
       - name: Deploy through bastion
