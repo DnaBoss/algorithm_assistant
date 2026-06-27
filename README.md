@@ -30,3 +30,7 @@ npm run build
 All normal development should start from `develop`, continue on a short-lived
 topic branch, and merge back into `develop` after checks pass. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the full Git flow.
+
+Deployment uses a manual GitHub Actions workflow that builds the Vite site and
+syncs `dist/` to `essence` through `bastion`. See
+[docs/deployment.md](docs/deployment.md).
