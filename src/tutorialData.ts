@@ -319,7 +319,7 @@ function expansionStep(raw: RawTutorial, index: number): Step {
 }
 
 function ensureMinimumSteps(raw: RawTutorial, steps: Step[]): Step[] {
-  let expanded = steps.length >= 5 ? [...steps] : [introStep(raw), ...steps, finishStep(raw)]
+  const expanded = steps.length >= 5 ? [...steps] : [introStep(raw), ...steps, finishStep(raw)]
   while (expanded.length < 5) expanded.push(finishStep(raw))
   const target = targetStepCount(raw)
   let insert = 0

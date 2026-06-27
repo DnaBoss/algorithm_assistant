@@ -69,7 +69,10 @@ function Visualizer({ step }: { step: Step }) {
   const v = step.visual
   if (v.kind === 'array') return <div className="visual array-viz"><div className="cells">{v.items?.map((item, i) => <div key={i} className="cell-wrap"><div className={'cell ' + (v.pointers?.some(p => p.index === i) ? 'active' : '')}>{item}</div><span className="index">{i}</span>{v.pointers?.filter(p => p.index === i).map(p => <b key={p.label} className="pointer" style={{ color: p.color }}>{p.label}</b>)}</div>)}</div><Notes notes={v.notes} /></div>
   if (v.kind === 'linked-list') return <div className="visual list-viz"><div className="linked-row">{v.links?.map((n, idx) => <div className="node-wrap" key={n.id}><div className={'list-node ' + (n.highlight ? 'active ' : '') + (n.faded ? 'faded' : '')}><span>{n.value}</span><small>{n.next ? 'next' : 'null'}</small></div>{idx < (v.links?.length ?? 0) - 1 && <span className="arrow">→</span>}<div className="node-pointers">{v.pointers?.filter(p => p.node === n.id).map(p => <b key={p.label}>{p.label}</b>)}</div></div>)}</div><Notes notes={v.notes} /></div>
-  if (v.kind === 'tree') return <div className="visual tree-viz"><svg viewBox="0 0 100 86" role="img" aria-label="tree dry run">{v.nodes?.flatMap(n => [n.left, n.right].filter(Boolean).map(child => { const c = v.nodes?.find(x => x.id === child)!; return <line key={n.id + '-' + child} x1={n.x} y1={n.y + 5} x2={c.x} y2={c.y - 5} className="edge" /> }))}{v.nodes?.map(n => <g key={n.id}><circle cx={n.x} cy={n.y} r="5.8" className={n.highlight ? 'tree-node active' : 'tree-node'} /><text x={n.x} y={n.y + 1.5} textAnchor="middle">{n.value}</text>{v.pointers?.filter(p => p.node === n.id).map(p => <text key={p.label} x={n.x} y={n.y - 8} textAnchor="middle" className="tree-pointer">{p.label}</text>)}</g>)}</svg><Notes notes={v.notes} /></div>
+  if (v.kind === 'tree') {
+    const nodes = v.nodes ?? []
+    return <div className="visual tree-viz"><svg viewBox="0 0 100 86" role="img" aria-label="tree dry run">{nodes.flatMap(n => [n.left, n.right].filter(Boolean).flatMap(child => { const c = nodes.find(x => x.id === child); return c ? [<line key={n.id + '-' + child} x1={n.x} y1={n.y + 5} x2={c.x} y2={c.y - 5} className="edge" />] : [] }))}{nodes.map(n => <g key={n.id}><circle cx={n.x} cy={n.y} r="5.8" className={n.highlight ? 'tree-node active' : 'tree-node'} /><text x={n.x} y={n.y + 1.5} textAnchor="middle">{n.value}</text>{v.pointers?.filter(p => p.node === n.id).map(p => <text key={p.label} x={n.x} y={n.y - 8} textAnchor="middle" className="tree-pointer">{p.label}</text>)}</g>)}</svg><Notes notes={v.notes} /></div>
+  }
   return <div className="visual stack-viz"><div className="stack-box">{(v.stack?.length ? v.stack : ['空']).map((s, i) => <div className={s === '空' ? 'stack-empty' : 'stack-item'} key={i}>{s}</div>)}</div><Notes notes={v.notes} /></div>
 }
 
@@ -126,9 +129,10 @@ function App() {
     setSelectedId(nextFiltered[0]?.id ?? tutorials[0].id)
     setStepIndex(0)
   }
-  const openTrack = (trackId: TrackId) => { setActiveTrackId(trackId); window.location.hash = 'track' }
-  const openLessonFromTrack = (id: string) => { choose(id); setActiveTrackId(null); window.location.hash = 'tutorials' }
-  const selectTrackTag = (nextTag: string) => { chooseTag(nextTag); setActiveTrackId(null); window.location.hash = 'tutorials' }
+  const setHash = (hash: string) => window.history.pushState(null, '', `#${hash}`)
+  const openTrack = (trackId: TrackId) => { setActiveTrackId(trackId); setHash('track') }
+  const openLessonFromTrack = (id: string) => { choose(id); setActiveTrackId(null); setHash('tutorials') }
+  const selectTrackTag = (nextTag: string) => { chooseTag(nextTag); setActiveTrackId(null); setHash('tutorials') }
 
   return <main>
     <header className="nav"><div className="brand"><span className="logo">AL</span><span>Algo Lab</span></div><nav><a href="#tutorials">搜尋題目</a><a href="#tracks">題組</a><a href="https://labuladong.online/zh/" target="_blank">靈感來源</a></nav></header>
