@@ -15,8 +15,10 @@ export type Step = {
     notes?: string[]
   }
 }
-export type Tutorial = { id: string; title: string; difficulty: 'Easy' | 'Medium' | 'Hard'; group: string; summary: string; tags: string[]; idea: string[]; complexity: string; code: string[]; steps: Step[] }
-type RawTutorial = Omit<Tutorial, 'tags' | 'idea' | 'code' | 'steps' | 'complexity'> & { tags: string[]; pattern: VisualKind; focus: string; operation: string }
+export type SolutionLanguage = 'cpp' | 'java' | 'js'
+export type SolutionSet = Record<SolutionLanguage, string[]>
+export type Tutorial = { id: string; title: string; difficulty: 'Easy' | 'Medium' | 'Hard'; group: string; summary: string; tags: string[]; idea: string[]; complexity: string; code: string[]; solutions: SolutionSet; steps: Step[] }
+type RawTutorial = Omit<Tutorial, 'tags' | 'idea' | 'code' | 'solutions' | 'steps' | 'complexity'> & { tags: string[]; pattern: VisualKind; focus: string; operation: string }
 
 const codeByPattern: Record<VisualKind, string[]> = {
   array: ['vector<int> sample = 建立本題測資();', 'int answer = 初始化答案;', 'for (int i = 0; i < sample.size(); i++) {', '  int current = sample[i];', '  依題意更新指標、狀態或 DP 表;', '}', 'return answer;'],
@@ -413,6 +415,40 @@ function codeFor(raw: RawTutorial): string[] {
   return fallbackCodeFor(raw)
 }
 
+function javaClassName(raw: RawTutorial): string {
+  const name = cppName(raw.id)
+  return name[0].toUpperCase() + name.slice(1)
+}
+
+function fallbackJavaFor(raw: RawTutorial): string[] {
+  const name = javaClassName(raw)
+  if (raw.tags.includes('Tree')) return ['class Solution {', '  public int solve(TreeNode root) {', '    return dfs(root);', '  }', '', '  private int dfs(TreeNode node) {', '    if (node == null) return 0;', '    int left = dfs(node.left);', '    int right = dfs(node.right);', '    return combine(node.val, left, right);', '  }', '', '  private int combine(int value, int left, int right) {', '    return Math.max(left, right) + value;', '  }', '}']
+  if (raw.tags.includes('DP')) return ['class Solution {', `  public int ${name}(int[] nums) {`, '    int[] dp = new int[nums.length + 1];', '    dp[0] = 1;', '    for (int i = 1; i <= nums.length; i++) {', '      dp[i] = Math.max(dp[i - 1], dp[i]);', '    }', '    return dp[nums.length];', '  }', '}']
+  if (raw.tags.includes('String')) return ['class Solution {', `  public int ${name}(String s) {`, '    int[] freq = new int[128];', '    int left = 0, best = 0;', '    for (int right = 0; right < s.length(); right++) {', '      freq[s.charAt(right)]++;', '      best = Math.max(best, right - left + 1);', '    }', '    return best;', '  }', '}']
+  return ['class Solution {', `  public int ${name}(int[] nums) {`, '    int answer = 0;', '    for (int i = 0; i < nums.length; i++) {', '      int current = nums[i];', '      answer = Math.max(answer, current);', '    }', '    return answer;', '  }', '}']
+}
+
+function fallbackJsFor(raw: RawTutorial): string[] {
+  const name = cppName(raw.id)
+  if (raw.tags.includes('Tree')) return ['function solve(root) {', '  function dfs(node) {', '    if (node === null) return 0;', '    const left = dfs(node.left);', '    const right = dfs(node.right);', '    return Math.max(left, right) + node.val;', '  }', '', '  return dfs(root);', '}']
+  if (raw.tags.includes('DP')) return [`function ${name}(nums) {`, '  const dp = Array(nums.length + 1).fill(0);', '  dp[0] = 1;', '  for (let i = 1; i <= nums.length; i++) {', '    dp[i] = Math.max(dp[i - 1], dp[i]);', '  }', '  return dp[nums.length];', '}']
+  if (raw.tags.includes('String')) return [`function ${name}(s) {`, '  const freq = Array(128).fill(0);', '  let left = 0;', '  let best = 0;', '  for (let right = 0; right < s.length; right++) {', '    freq[s.charCodeAt(right)]++;', '    best = Math.max(best, right - left + 1);', '  }', '  return best;', '}']
+  return [`function ${name}(nums) {`, '  let answer = 0;', '  for (let i = 0; i < nums.length; i++) {', '    const current = nums[i];', '    answer = Math.max(answer, current);', '  }', '  return answer;', '}']
+}
+
+function solutionsFor(raw: RawTutorial): SolutionSet {
+  if (raw.id === 'two-sum') return {
+    cpp: ['class Solution {', 'public:', '  vector<int> twoSum(vector<int>& nums, int target) {', '    unordered_map<int, int> seen;', '    for (int i = 0; i < nums.size(); i++) {', '      int need = target - nums[i];', '      if (seen.count(need)) return {seen[need], i};', '      seen[nums[i]] = i;', '    }', '    return {};', '  }', '};'],
+    java: ['class Solution {', '  public int[] twoSum(int[] nums, int target) {', '    Map<Integer, Integer> seen = new HashMap<>();', '    for (int i = 0; i < nums.length; i++) {', '      int need = target - nums[i];', '      if (seen.containsKey(need)) {', '        return new int[] { seen.get(need), i };', '      }', '      seen.put(nums[i], i);', '    }', '    return new int[0];', '  }', '}'],
+    js: ['function twoSum(nums, target) {', '  const seen = new Map();', '  for (let i = 0; i < nums.length; i++) {', '    const need = target - nums[i];', '    if (seen.has(need)) {', '      return [seen.get(need), i];', '    }', '    seen.set(nums[i], i);', '  }', '  return [];', '}']
+  }
+  return {
+    cpp: codeFor(raw),
+    java: fallbackJavaFor(raw),
+    js: fallbackJsFor(raw)
+  }
+}
+
 function make(raw: RawTutorial): Tutorial {
   const isTopOnly = raw.tags.includes('Top 150 Only')
   const contentTags = raw.tags.filter(t => t !== 'Top 150 Only')
@@ -422,6 +458,7 @@ function make(raw: RawTutorial): Tutorial {
     tags: [...planTags, ...contentTags],
     idea: [`核心觀念：${raw.focus}。`, `白板推演時固定追蹤目前指標 / 節點與答案狀態。`, `每一步只做一個動作：${raw.operation}，再檢查不變量是否仍成立。`],
     code: codeFor(raw),
+    solutions: solutionsFor(raw),
     complexity: raw.pattern === 'tree' ? 'Time O(n), Space O(h)' : raw.pattern === 'linked-list' ? 'Time O(n), Space O(1)' : raw.pattern === 'stack' ? 'Time O(n), Space O(n)' : 'Time O(n), Space O(n) 或依排序/二分條件調整',
     steps: stepsFor(raw)
   }

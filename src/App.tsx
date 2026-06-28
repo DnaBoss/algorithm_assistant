@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import './App.css'
-import { tutorials, type Step } from './tutorialData'
+import { tutorials, type SolutionLanguage, type Step, type Tutorial } from './tutorialData'
 import { problemNumberFor, searchTutorials } from './search'
 
 const primaryTags = ['All', 'Array', 'String', 'Linked List', 'Tree', 'Graph', 'DP', 'Matrix', 'Heap', 'Trie', 'Stack', 'Interval']
+const solutionLabels: Record<SolutionLanguage, string> = { cpp: 'C++', java: 'Java', js: 'JS' }
 
 function Visualizer({ step }: { step: Step }) {
   const v = step.visual
@@ -24,12 +25,27 @@ function VariableTimeline({ steps, activeIndex }: { steps: Step[]; activeIndex: 
   return <div className="timeline"><h3>變數變化時間線</h3><div className="timeline-scroll"><table><thead><tr><th>Step</th>{keys.map(k => <th key={k}>{k}</th>)}</tr></thead><tbody>{steps.map((s, i) => <tr key={s.title} className={i === activeIndex ? 'active' : ''}><td>{i + 1}. {s.title}</td>{keys.map(k => <td key={k}>{s.variables[k] === undefined ? '—' : String(s.variables[k])}</td>)}</tr>)}</tbody></table></div></div>
 }
 
+function Solutions({ tutorial, open, language, onToggle, onLanguage }: { tutorial: Tutorial; open: boolean; language: SolutionLanguage; onToggle: () => void; onLanguage: (language: SolutionLanguage) => void }) {
+  return <section className="solutions">
+    <button className="solution-toggle" onClick={onToggle} aria-expanded={open}>
+      <span>完整解答</span>
+      <b>{open ? '收合' : '展開'}</b>
+    </button>
+    {open && <div className="solution-body">
+      <div className="solution-tabs">{(['cpp', 'java', 'js'] as SolutionLanguage[]).map(item => <button key={item} className={language === item ? 'active' : ''} onClick={() => onLanguage(item)}>{solutionLabels[item]}</button>)}</div>
+      <pre className="solution-code">{tutorial.solutions[language].map(line => <code key={line} className="line">{line}</code>)}</pre>
+    </div>}
+  </section>
+}
+
 function App() {
   const [tag, setTag] = useState('All')
   const [selectedId, setSelectedId] = useState(tutorials[0].id)
   const [stepIndex, setStepIndex] = useState(0)
   const [showAllTags, setShowAllTags] = useState(false)
   const [query, setQuery] = useState('')
+  const [solutionOpen, setSolutionOpen] = useState(false)
+  const [solutionLanguage, setSolutionLanguage] = useState<SolutionLanguage>('cpp')
 
   const allTags = useMemo(() => ['All', ...Array.from(new Set(tutorials.flatMap(t => t.tags))).sort()], [])
   const visibleTags = showAllTags ? allTags : primaryTags.filter(t => allTags.includes(t))
@@ -38,12 +54,13 @@ function App() {
   const tutorial = tutorials.find(t => t.id === selectedId) ?? filtered[0] ?? tutorials[0]
   const step = tutorial.steps[stepIndex] ?? tutorial.steps[0]
 
-  const choose = (id: string) => { setSelectedId(id); setStepIndex(0) }
+  const choose = (id: string) => { setSelectedId(id); setStepIndex(0); setSolutionOpen(false) }
   const chooseTag = (nextTag: string) => {
     const nextFiltered = nextTag === 'All' ? searchTutorials(tutorials, query) : searchTutorials(tutorials, query).filter(t => t.tags.includes(nextTag))
     setTag(nextTag)
     setSelectedId(nextFiltered[0]?.id ?? tutorials[0].id)
     setStepIndex(0)
+    setSolutionOpen(false)
   }
   const changeQuery = (nextQuery: string) => {
     const nextResults = searchTutorials(tutorials, nextQuery)
@@ -51,6 +68,7 @@ function App() {
     setQuery(nextQuery)
     setSelectedId(nextFiltered[0]?.id ?? tutorials[0].id)
     setStepIndex(0)
+    setSolutionOpen(false)
   }
 
   return <main>
@@ -62,7 +80,7 @@ function App() {
       <article className="lesson"><div className="lesson-head"><div><p className="eyebrow">{tutorial.group} • {tutorial.difficulty}</p><h2>{tutorial.title}</h2><p>{tutorial.summary}</p></div><Tags tags={tutorial.tags} /></div>
         <div className="idea"><h3>思路講解</h3><ol>{tutorial.idea.map(i => <li key={i}>{i}</li>)}</ol><p className="complexity">{tutorial.complexity}</p></div>
         <div className="dryrun"><div className="step-panel"><div className="step-top"><span>Step {stepIndex + 1}/{tutorial.steps.length}</span><h3>{step.title}</h3><p>{step.explain}</p></div><Visualizer step={step} /><div className="controls"><button onClick={() => setStepIndex(Math.max(0, stepIndex - 1))} disabled={stepIndex === 0}>← 上一步</button><button onClick={() => setStepIndex(Math.min(tutorial.steps.length - 1, stepIndex + 1))} disabled={stepIndex === tutorial.steps.length - 1}>下一步 →</button></div></div>
-          <div className="state-panel"><h3>當前變數</h3><div className="vars">{Object.entries(step.variables).map(([k, v]) => <div key={k}><span>{k}</span><b>{String(v)}</b></div>)}</div><VariableTimeline steps={tutorial.steps} activeIndex={stepIndex} /><h3>對應白板程式碼</h3><pre>{tutorial.code.map(line => <code key={line} className={line === step.codeLine ? 'line active' : 'line'}>{line}</code>)}</pre></div></div>
+          <div className="state-panel"><h3>當前變數</h3><div className="vars">{Object.entries(step.variables).map(([k, v]) => <div key={k}><span>{k}</span><b>{String(v)}</b></div>)}</div><VariableTimeline steps={tutorial.steps} activeIndex={stepIndex} /><h3>目前步驟對應程式碼</h3><pre>{tutorial.code.map(line => <code key={line} className={line === step.codeLine ? 'line active' : 'line'}>{line}</code>)}</pre><Solutions tutorial={tutorial} open={solutionOpen} language={solutionLanguage} onToggle={() => setSolutionOpen(!solutionOpen)} onLanguage={setSolutionLanguage} /></div></div>
       </article></section>
   </main>
 }
