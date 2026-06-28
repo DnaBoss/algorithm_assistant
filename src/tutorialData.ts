@@ -449,6 +449,112 @@ function solutionsFor(raw: RawTutorial): SolutionSet {
   }
 }
 
+function hasTag(raw: RawTutorial, tag: string): boolean {
+  return raw.tags.includes(tag)
+}
+
+function ideaFor(raw: RawTutorial): string[] {
+  if (raw.id === 'two-sum') return [
+    '不要用兩層迴圈硬找配對；掃到 nums[i] 時，只問「前面有沒有 target - nums[i]」。',
+    'seen 存的是值到索引的對應，因為答案要回傳 index，不是回傳數字本身。',
+    '先查 need 再放 nums[i]，可以避免同一個元素被自己配到。',
+    '命中時直接回傳 seen[need] 和 i；如果沒命中，就把目前數字留給後面的元素使用。',
+    '這個套路可以遷移到「兩數配對、補數查找、前綴狀態查找」類題。'
+  ]
+  if (hasTag(raw, 'DP') && hasTag(raw, 'Matrix')) return [
+    '先定義狀態：dp[r][c] 表示「走到或處理到格子 (r,c) 時，這一格已經算好的答案」。',
+    `轉移只看已經算過的鄰居：${raw.operation}。這代表填表順序必須讓上方與左方先完成。`,
+    '第一列與第一欄是邊界；通常只能一路往右或一路往下，所以要先初始化，不然後面格子會接到錯的 0。',
+    '填表時一格一格算，不要在腦中跳到終點；每一格都只承接局部答案，整體答案自然長出來。',
+    '最後讀右下角或題目指定的終點格。遇到障礙物、最小路徑和、最大價值時，通常只是在轉移式裡換成加法、min 或 max。'
+  ]
+  if (hasTag(raw, 'DP')) return [
+    `先把狀態說清楚：${raw.focus} 代表目前子問題的答案，而不是最後答案的魔法變數。`,
+    `找轉移式：${raw.operation}。轉移式只應該依賴更小、已知的子問題。`,
+    '先處理 base case；DP 錯通常不是公式錯，而是起點、空值或第一格沒有定好。',
+    '決定填表順序：一維通常由左到右，區間或字串題可能需要依長度、左界或右界掃。',
+    '如果狀態只依賴前一層或少數幾格，再考慮壓縮空間；先寫懂，再優化。'
+  ]
+  if (hasTag(raw, 'Binary Search')) return [
+    `核心不是「切一半」，而是找到能排除一半資料的判斷條件：${raw.focus}。`,
+    `每次用 mid 做一次明確決策：${raw.operation}。決策後 left/right 必須真的縮小。`,
+    '先決定搜尋區間語意：閉區間 left <= right，或半開區間 left < right；不要兩種寫法混在一起。',
+    '回傳值要跟題目一致：有些題回傳 index，有些回傳值，有些回傳插入位置或最小可行答案。',
+    '旋轉陣列、peak、答案二分都能用同一套想法：證明哪一邊一定不需要再看。'
+  ]
+  if (hasTag(raw, 'Two Pointers') || hasTag(raw, 'Sliding Window')) return [
+    `先確認兩個指標各自代表什麼：${raw.focus}。`,
+    `每輪只做一件事：${raw.operation}，並確認移動後不會漏掉可能答案。`,
+    '雙指標題通常靠單調性排除狀態；如果移動某一邊不會讓答案變好，就可以放心丟掉那一邊。',
+    'Sliding window 要分清楚 expand 與 shrink：右端負責納入新資料，左端負責把不合法狀態修回合法。',
+    '每次更新答案的位置要固定：通常在 window 合法時更新，或在剛命中條件時更新。'
+  ]
+  if (hasTag(raw, 'Backtracking')) return [
+    `先定義 path 代表什麼，以及目前層級要做哪個選擇：${raw.focus}。`,
+    '每層遞迴做「選擇、遞迴、撤銷選擇」三步，順序固定後就不容易亂。',
+    `剪枝條件來自題目限制：${raw.operation}。越早剪掉不可能分支，搜尋越小。`,
+    '答案通常在 path 長度達標、剩餘值為 0、或走到終點時收集。',
+    raw.difficulty === 'Hard' ? 'Hard 回溯題要特別注意去重、剪枝與狀態復原；先確定不漏解，再談速度。' : '把遞迴樹畫兩層就好，重點是看每層有哪些候選選擇。'
+  ]
+  if (hasTag(raw, 'Graph') || hasTag(raw, 'BFS') || hasTag(raw, 'DFS')) return [
+    `先把資料轉成可以走訪的狀態圖：${raw.focus}。節點可以是人、課程、格子、字串或中間狀態。`,
+    'BFS 適合最短步數或層級擴散；DFS 適合連通塊、可達性與完整探索。',
+    `每次從目前狀態產生下一批鄰居：${raw.operation}。產生鄰居後立刻標記 visited，避免重複走。`,
+    '如果圖是 grid，先處理越界、障礙物、已訪問三個早停條件。',
+    raw.difficulty === 'Hard' ? 'Hard 圖題通常卡在狀態設計，不是 BFS/DFS 本身；先縮小狀態，再估計狀態數。' : '用一個小圖手算 queue 或 recursion stack，可以快速看出是否會重複訪問。'
+  ]
+  if (hasTag(raw, 'Tree') || raw.pattern === 'tree') return [
+    `先決定 DFS 回傳什麼：${raw.focus}。回傳值定清楚，遞迴才不會變成憑感覺走。`,
+    '每個節點只處理三件事：拿左子樹結果、拿右子樹結果、把兩邊和 current 合併。',
+    `合併規則就是本題核心：${raw.operation}。不同樹題只是合併方式不同。`,
+    'base case 通常是 null；先定義空節點回傳什麼，才能讓葉節點自然成立。',
+    raw.difficulty === 'Hard' ? 'Hard 樹題通常會同時維護「回傳給父節點的值」和「全域答案」，兩者不要混在一起。' : '想檢查自己懂不懂，就拿一棵三層小樹手算一次左右子樹怎麼回傳。'
+  ]
+  if (hasTag(raw, 'Linked List') || raw.pattern === 'linked-list') return [
+    `先畫出指標角色：${raw.focus}。鏈表題最怕的是知道要改哪個值，卻弄丟後面的節點。`,
+    '改 next 之前先保存下一個節點；任何斷鏈、反轉、刪除都先問「後半段還找得到嗎」。',
+    `每一步只做局部重接：${raw.operation}。重接完再移動指標，不要同時做太多事。`,
+    'dummy node 可以降低頭節點被刪除或插入時的分支數，讓程式和白板推演都更穩。',
+    raw.difficulty === 'Hard' ? 'Hard 鏈表題通常是多段操作組合：先切段、再反轉或合併、最後接回去。每段分開驗證。' : '用 2 到 4 個節點的小測資推一次，通常比直接看長鏈表更容易抓到錯。'
+  ]
+  if (hasTag(raw, 'Stack') || raw.pattern === 'stack') return [
+    `先決定 stack 裡放的是什麼：${raw.focus}。放值、索引、pair 或中間狀態，意義要固定。`,
+    `每讀一個元素，先處理該彈出的舊狀態，再放入新狀態：${raw.operation}。`,
+    '單調 stack 的關鍵是「被彈出的元素再也不可能成為更好答案」，所以每個元素最多進出一次。',
+    '遇到括號、路徑、運算式時，stack 常用來保存尚未配對或尚未完成的上下文。',
+    '最後別忘了處理 stack 中剩下的元素；有些題答案就在收尾階段產生。'
+  ]
+  if (hasTag(raw, 'Hash Map') || hasTag(raw, 'Hash Set')) return [
+    `先問 map/set 要回答什麼查詢：${raw.focus}。能 O(1) 查到的資訊，就是這題降維的關鍵。`,
+    `掃描時維護資料結構：${raw.operation}。順序很重要，先查或先放會影響是否用到自己。`,
+    '如果要回傳位置，map 裡要存 index；如果只判斷存在，set 就夠。',
+    '遇到計數題，把 key 當分類，value 當頻率或最近位置。',
+    '這類題的可遷移點是：把「回頭找」改成「邊走邊記」。'
+  ]
+  return [
+    `先把題目壓成一個可追蹤的不變量：${raw.focus}。`,
+    `每一步只做本題真正改變狀態的操作：${raw.operation}。`,
+    '用小測資手算前兩輪，確認變數更新順序和答案更新位置。',
+    '把邊界情況列出來：空輸入、單元素、重複值、全相同、極大或極小值。',
+    raw.difficulty === 'Hard' ? '如果題目很長，先拆成狀態設計、轉移規則、剪枝或資料結構三塊，各自驗證。' : '能說清楚每個變數在某一刻代表什麼，程式通常就寫得出來。'
+  ]
+}
+
+function complexityFor(raw: RawTutorial): string {
+  if (hasTag(raw, 'DP') && hasTag(raw, 'Matrix')) return 'Time O(m*n), Space O(m*n)，若只依賴上一列可壓到 O(n)'
+  if (hasTag(raw, 'DP')) return 'Time O(狀態數 * 每個狀態轉移成本), Space O(狀態數)'
+  if (hasTag(raw, 'Binary Search')) return 'Time O(log n), Space O(1)'
+  if (hasTag(raw, 'Backtracking')) return 'Time O(分支數^深度), Space O(遞迴深度)'
+  if (hasTag(raw, 'Graph') || hasTag(raw, 'BFS') || hasTag(raw, 'DFS')) return 'Time O(V+E), Space O(V)'
+  if (hasTag(raw, 'Tree') || raw.pattern === 'tree') return 'Time O(n), Space O(h)'
+  if (hasTag(raw, 'Linked List') || raw.pattern === 'linked-list') return 'Time O(n), Space O(1)'
+  if (hasTag(raw, 'Heap')) return 'Time O(n log k), Space O(k)'
+  if (hasTag(raw, 'Sorting')) return 'Time O(n log n), Space O(依排序實作)'
+  if (hasTag(raw, 'Stack') || raw.pattern === 'stack') return 'Time O(n), Space O(n)'
+  if (hasTag(raw, 'Hash Map') || hasTag(raw, 'Hash Set')) return 'Time O(n), Space O(n)'
+  return 'Time O(n), Space O(1)'
+}
+
 function make(raw: RawTutorial): Tutorial {
   const isTopOnly = raw.tags.includes('Top 150 Only')
   const contentTags = raw.tags.filter(t => t !== 'Top 150 Only')
@@ -456,10 +562,10 @@ function make(raw: RawTutorial): Tutorial {
   return {
     ...raw,
     tags: [...planTags, ...contentTags],
-    idea: [`核心觀念：${raw.focus}。`, `白板推演時固定追蹤目前指標 / 節點與答案狀態。`, `每一步只做一個動作：${raw.operation}，再檢查不變量是否仍成立。`],
+    idea: ideaFor(raw),
     code: codeFor(raw),
     solutions: solutionsFor(raw),
-    complexity: raw.pattern === 'tree' ? 'Time O(n), Space O(h)' : raw.pattern === 'linked-list' ? 'Time O(n), Space O(1)' : raw.pattern === 'stack' ? 'Time O(n), Space O(n)' : 'Time O(n), Space O(n) 或依排序/二分條件調整',
+    complexity: complexityFor(raw),
     steps: stepsFor(raw)
   }
 }
