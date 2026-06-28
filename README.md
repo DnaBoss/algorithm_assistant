@@ -14,10 +14,16 @@ Interactive algorithm learning site inspired by Labuladong-style explanations, f
 
 ## Roadmap
 
-- Complete Blind / LeetCode 75 set.
-- Add LeetCode Top 150.
-- Add DB tutorials with SQL table / JOIN / index dry runs.
-- Add category paths for tree, linked list, graph, array, string, dynamic programming, greedy, backtracking, heap, and binary search.
+- Move the site toward a personal blog and knowledge base with Algo Lab as one
+  section.
+- Add post authoring, Markdown editing, comments, reactions, and owner admin.
+- Add resume timeline, calendar, Markdown todo, and Easy PG.
+- Continue expanding Algo Lab paths such as Blind 75, Top 150, rank-point
+  selection, SQL, and category-based practice.
+
+See [docs/product-development-record.md](docs/product-development-record.md) for
+the durable product plan and [docs/current-architecture.md](docs/current-architecture.md)
+for the architecture snapshot that should be updated after each feature branch.
 
 ## Development
 
