@@ -1,69 +1,9 @@
 import { useMemo, useState } from 'react'
 import './App.css'
-import { tutorials, type Step, type Tutorial } from './tutorialData'
+import { tutorials, type Step } from './tutorialData'
 import { problemNumberFor, searchTutorials } from './search'
-import { problemBank, problemBankMeta } from './problemBank'
-
-type TrackId = 'blind75' | 'top150' | 'problem-bank' | 'db' | 'categories' | 'multi-tags'
-
-type Track = {
-  id: TrackId
-  title: string
-  subtitle: string
-  description: string
-  filter?: (tutorial: Tutorial) => boolean
-  actions: string[]
-}
 
 const primaryTags = ['All', 'Array', 'String', 'Linked List', 'Tree', 'Graph', 'DP', 'Matrix', 'Heap', 'Trie', 'Stack', 'Interval']
-const categoryTags = ['Array', 'String', 'Linked List', 'Tree', 'Graph', 'DP', 'Matrix', 'Heap', 'Trie', 'Stack', 'Interval', 'Binary Search', 'Two Pointers', 'Backtracking']
-
-const tracks: Track[] = [
-  {
-    id: 'blind75',
-    title: 'Blind / LeetCode 75',
-    subtitle: '核心面試題組',
-    description: '先把最常考的 75 題練熟；每題直接進入教學、白板 dry-run、C++ 解法與變數追蹤。',
-    filter: tutorial => tutorial.tags.includes('Blind 75') || tutorial.tags.includes('LeetCode 75'),
-    actions: ['從 Two Sum 開始', '用分類補弱點', '練習 linked list / tree / DP 代表題']
-  },
-  {
-    id: 'top150',
-    title: 'LeetCode Top 150',
-    subtitle: '完整面試清單',
-    description: '收斂到 Top 150 題目清單；適合用搜尋、題號與 tag 交叉安排每日練習。',
-    filter: tutorial => tutorial.tags.includes('Top 150') || tutorial.tags.includes('LeetCode Top 150'),
-    actions: ['用題號快速定位', '依難度補齊清單', '逐題 dry-run 檢查理解']
-  },
-  {
-    id: 'problem-bank',
-    title: '題庫 / Rating',
-    subtitle: '全題庫與週賽 rating',
-    description: '整合 LeetCode 全題索引、Zerotrac 週賽 rating、常見高頻題與目前已有教學題。',
-    actions: ['用 rating 區間選題', '看週賽 Q1-Q4', '篩常見高價值題']
-  },
-  {
-    id: 'db',
-    title: 'DB 教程',
-    subtitle: 'SQL / index / join dry-run',
-    description: '規劃為資料庫專屬題組頁：查詢流程、索引命中、JOIN 中間表、交易隔離與 EXPLAIN。',
-    actions: ['SQL 查詢 dry-run', '索引與查詢計畫', 'JOIN 中間結果視覺化']
-  },
-  {
-    id: 'categories',
-    title: '分類算法教程',
-    subtitle: '依資料結構與技巧練習',
-    description: '按 Array、Tree、Linked List、Graph、DP 等分類進入題組，不只是標籤列表。',
-    actions: ['選一個分類', '看該分類所有題目', '直接打開第一題教學']
-  },
-  {
-    id: 'multi-tags',
-    title: '多標籤索引',
-    subtitle: '交叉查找題目',
-    description: '用 tag 看題目同時屬於哪些路線；適合找 Beginner + Tree、DP + Medium 這種交叉練習。',
-    actions: ['查看所有 tag', '看每個 tag 的題數', '點 tag 切換題目索引']
-  }
-]
 
 function Visualizer({ step }: { step: Step }) {
   const v = step.visual
@@ -90,30 +30,13 @@ function App() {
   const [stepIndex, setStepIndex] = useState(0)
   const [showAllTags, setShowAllTags] = useState(false)
   const [query, setQuery] = useState('')
-  const [activeTrackId, setActiveTrackId] = useState<TrackId | null>(null)
-  const [bankQuery, setBankQuery] = useState('')
-  const [minRating, setMinRating] = useState(1200)
-  const [maxRating, setMaxRating] = useState(2200)
-  const [bankMode, setBankMode] = useState<'high-value' | 'contest' | 'all'>('high-value')
 
   const allTags = useMemo(() => ['All', ...Array.from(new Set(tutorials.flatMap(t => t.tags))).sort()], [])
-  const tagCounts = useMemo(() => Object.fromEntries(allTags.map(t => [t, t === 'All' ? tutorials.length : tutorials.filter(item => item.tags.includes(t)).length])), [allTags])
   const visibleTags = showAllTags ? allTags : primaryTags.filter(t => allTags.includes(t))
   const searched = useMemo(() => searchTutorials(tutorials, query), [query])
   const filtered = tag === 'All' ? searched : searched.filter(t => t.tags.includes(tag))
   const tutorial = tutorials.find(t => t.id === selectedId) ?? filtered[0] ?? tutorials[0]
   const step = tutorial.steps[stepIndex] ?? tutorial.steps[0]
-  const activeTrack = tracks.find(track => track.id === activeTrackId) ?? null
-  const trackTutorials = activeTrack?.filter ? tutorials.filter(activeTrack.filter) : []
-  const ratingFilteredProblems = useMemo(() => {
-    const q = bankQuery.trim().toLowerCase()
-    return problemBank
-      .filter(p => bankMode === 'all' || (bankMode === 'contest' ? Boolean(p.contest) : p.highValue))
-      .filter(p => !p.rating || (p.rating >= minRating && p.rating <= maxRating))
-      .filter(p => !q || p.id.includes(q) || p.title.toLowerCase().includes(q) || p.slug.includes(q) || p.contest?.toLowerCase().includes(q))
-      .sort((a, b) => Number(Boolean(b.hasTutorial)) - Number(Boolean(a.hasTutorial)) || Number(Boolean(b.highValue)) - Number(Boolean(a.highValue)) || (a.rating ?? 9999) - (b.rating ?? 9999) || Number(a.id) - Number(b.id))
-      .slice(0, 300)
-  }, [bankMode, bankQuery, minRating, maxRating])
 
   const choose = (id: string) => { setSelectedId(id); setStepIndex(0) }
   const chooseTag = (nextTag: string) => {
@@ -129,22 +52,11 @@ function App() {
     setSelectedId(nextFiltered[0]?.id ?? tutorials[0].id)
     setStepIndex(0)
   }
-  const setHash = (hash: string) => window.history.pushState(null, '', `#${hash}`)
-  const openLessonFromTrack = (id: string) => { choose(id); setActiveTrackId(null); setHash('tutorials') }
-  const selectTrackTag = (nextTag: string) => { chooseTag(nextTag); setActiveTrackId(null); setHash('tutorials') }
 
   return <main>
     <header className="nav"><div className="brand"><span className="logo">AL</span><span>Algo Lab</span></div><nav><a href="#tutorials">搜尋題目</a></nav></header>
 
     <section className="hero compact"><div className="hero-bg" /><p className="eyebrow">ALGO LAB</p><h1>先找題，再進 dry-run</h1><p className="lead">用題號、題名或分類進入教學；首頁只放能操作的入口。</p><div className="hero-actions"><a className="btn primary" href="#tutorials">搜尋題目</a></div></section>
-
-    {activeTrack && <section id="track" className="track-page" data-testid="track-page"><button className="btn secondary back-btn" data-testid="track-back" onClick={() => setActiveTrackId(null)}>← 回題組</button><p className="eyebrow">{activeTrack.subtitle}</p><h2>{activeTrack.title}</h2><p>{activeTrack.description}</p><div className="track-actions">{activeTrack.actions.map(action => <span key={action}>{action}</span>)}</div>
-      {activeTrack.id === 'db' && <div className="db-modules"><article><h3>SQL dry-run</h3><p>用一張表、一個 WHERE 條件開始，顯示掃描列、過濾列與輸出列。</p></article><article><h3>Index / EXPLAIN</h3><p>對照 full scan 與 index scan，標出 cost、rows 與命中條件。</p></article><article><h3>JOIN 中間表</h3><p>逐步顯示 nested loop / hash join 的中間結果與 row 數變化。</p></article></div>}
-      {activeTrack.id === 'categories' && <div className="category-grid">{categoryTags.filter(t => tagCounts[t]).map(t => <button key={t} onClick={() => selectTrackTag(t)}><b>{t}</b><span>{tagCounts[t]} 題</span></button>)}</div>}
-      {activeTrack.id === 'multi-tags' && <div className="category-grid tag-index">{allTags.filter(t => t !== 'All').map(t => <button key={t} onClick={() => selectTrackTag(t)}><b>{t}</b><span>{tagCounts[t]} 題</span></button>)}</div>}
-      {activeTrack.id === 'problem-bank' && <div className="problem-bank" data-testid="problem-bank"><div className="bank-summary"><b>{problemBankMeta.total}</b><span>LeetCode 全題</span><b>{problemBankMeta.ratedContestProblems}</b><span>週賽 / rating 題</span><b>{problemBankMeta.highValueProblems}</b><span>高價值候選</span></div><div className="bank-controls"><label>搜尋<input value={bankQuery} onChange={e => setBankQuery(e.target.value)} placeholder="題號、題名、contest" /></label><label>最低 rating<input type="number" value={minRating} onChange={e => setMinRating(Number(e.target.value))} /></label><label>最高 rating<input type="number" value={maxRating} onChange={e => setMaxRating(Number(e.target.value))} /></label><select value={bankMode} onChange={e => setBankMode(e.target.value as 'high-value' | 'contest' | 'all')}><option value="high-value">常見 / 高價值</option><option value="contest">所有週賽 rating 題</option><option value="all">LeetCode 全題</option></select></div><div className="bank-results">{ratingFilteredProblems.map(p => <a key={p.slug} href={`https://leetcode.com/problems/${p.slug}/`} target="_blank"><span>#{p.id} · {p.difficulty}{p.rating ? ` · rating ${p.rating}` : ''}</span><b>{p.title}</b><small>{p.contest ? `${p.contest} ${p.problemIndex}` : '非 rating 題'}{p.reasons.length ? ` · ${p.reasons.join(' / ')}` : ''}</small></a>)}</div></div>}
-      {trackTutorials.length > 0 && <div className="track-lessons">{trackTutorials.map(t => <button key={t.id} onClick={() => openLessonFromTrack(t.id)}><span>#{problemNumberFor(t.id) ?? '—'} · {t.group}</span><b>{t.title}</b><small>{t.summary}</small></button>)}</div>}
-    </section>}
 
     <section id="tutorials" className="layout"><aside className="sidebar"><div className="sidebar-head"><div><h2>題目索引</h2><p>可用 LeetCode 題號或題名 fuzzy search</p></div><button className="tag-toggle" onClick={() => setShowAllTags(!showAllTags)}>{showAllTags ? '收合標籤' : `更多標籤 (${allTags.length - primaryTags.length})`}</button></div><label className="search-box"><span>搜尋題目</span><input value={query} onChange={e => changeQuery(e.target.value)} placeholder="例：1、146、coin chnage、valid bst" /></label><div className="active-filter">目前：<b>{tag}</b> · {filtered.length} 題{query && <em> · 搜尋「{query}」</em>}</div><div className="filter">{visibleTags.map(t => <button key={t} onClick={() => chooseTag(t)} className={tag === t ? 'selected' : ''}>{t}</button>)}</div><div className="cards">{filtered.map(t => <button key={t.id} onClick={() => choose(t.id)} className={'problem-card ' + (t.id === tutorial.id ? 'active' : '')}><span>#{problemNumberFor(t.id) ?? '—'} · {t.group}</span><b>{t.title}</b><small>{t.summary}</small></button>)}</div></aside>
       <article className="lesson"><div className="lesson-head"><div><p className="eyebrow">{tutorial.group} • {tutorial.difficulty}</p><h2>{tutorial.title}</h2><p>{tutorial.summary}</p></div><Tags tags={tutorial.tags} /></div>
