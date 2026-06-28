@@ -7,7 +7,9 @@ Do not develop directly on `main` or `develop`.
 
 - `main`: stable release branch. Only merge verified release work from `develop`.
 - `develop`: integration branch. New work starts here and merges back here.
-- `codex/<topic>` or `feature/<topic>`: short-lived development branches.
+- `feature/<topic>`: short-lived branches for product features.
+- `fix/<topic>`: short-lived branches for bug fixes.
+- `docs/<topic>`: short-lived branches for documentation-only changes.
 
 ## Standard workflow
 
@@ -16,7 +18,7 @@ Start every change from an up-to-date `develop`:
 ```bash
 git switch develop
 git pull --ff-only origin develop
-git switch -c codex/<short-topic>
+git switch -c feature/<short-topic>
 ```
 
 Make the code change, then run the project checks before committing:
@@ -38,7 +40,7 @@ Merge the branch back into `develop` only after the checks pass:
 ```bash
 git switch develop
 git pull --ff-only origin develop
-git merge --no-ff codex/<short-topic>
+git merge --no-ff feature/<short-topic>
 ```
 
 Push `develop` when the merge is ready to share:
