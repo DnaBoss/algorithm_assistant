@@ -16,8 +16,8 @@ Public architecture snapshot for the ExactlyOne website.
 ## Source Map
 
 - `src/App.tsx`: main UI, ExactlyOne project hub, section navigation, public
-  section shells, blog read surface, Online Tool / Easy PG surface, Algo Lab
-  tutorial list, dry-run view, and solution panel.
+  section shells, blog read surface, Helios surface, Easy DB / Easy PG surface,
+  Algo Lab tutorial list, dry-run view, and solution panel.
 - `src/blogData.ts`: public blog post data model and published post list.
 - `src/tutorialData.ts`: tutorial definitions, tutorial content, solutions,
   idea explanations, complexity text.
@@ -53,14 +53,15 @@ Public architecture snapshot for the ExactlyOne website.
 ## Public Surface
 
 - ExactlyOne home hub with public sections.
+- Public Helios section shell with private-operation boundary copy.
+- Public Easy DB section shell with Easy PG as the PostgreSQL-focused tool.
 - Algo Lab search and filtering.
 - Tutorial selection by problem title, number, and tags.
 - Whiteboard-style dry-run steps.
 - Current variable state.
 - Variable timeline.
 - Visualizers for arrays, linked lists, trees, and stacks.
-- Collapsible full solutions with C++, Java, and JavaScript tabs.
-- Online Tool section with Easy PG.
+- Full-width complete solutions with C++, Java, and JavaScript tabs.
 - Personal blog section with a published-only data layer, search, category/tag
   filters, article metadata, reading view, heading table of contents, and empty
   states.
@@ -75,9 +76,9 @@ Public architecture snapshot for the ExactlyOne website.
   change, and optional TOTP.
 - Algo Lab: tutorial section, personal notes per problem, public replies,
   reactions, track hierarchy, and full-width complete solutions.
-- Helios: public research pages and authenticated operational dashboards sourced
-  from `/Users/cash/work_space/private/Helios`.
-- Easy DB: database tooling section sourced from
+- Helios: public research page and future authenticated operational dashboards
+  sourced from `/Users/cash/work_space/private/Helios`.
+- Easy DB: database tooling page sourced from
   `/Users/cash/work_space/private/easy-pg`, with public docs/examples and
   authenticated real connection operations.
 

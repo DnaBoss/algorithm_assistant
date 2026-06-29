@@ -32,7 +32,7 @@ This file is a public-safe product record.
 - Added the project hub navigation.
 - Added public shells for major sections.
 - Added Algo Lab as the algorithm-learning section.
-- Added Online Tool with Easy PG.
+- Added the first public Easy PG shell.
 - Set the personal blog to an empty public state until posts are published.
 - Added the published-only blog data layer, filters, search, and article reading
   view.
@@ -44,6 +44,9 @@ This file is a public-safe product record.
 ### 2026-06-30
 
 - Created the Helios, Algo Lab, Blog, and Easy DB integration roadmap.
+- Renamed public navigation from generic quant/tool labels to Helios and Easy
+  DB.
+- Moved Algo Lab complete solutions into an independent full-width section.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old assistant-prefixed remote branch and continued branch hygiene

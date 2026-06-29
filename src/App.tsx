@@ -8,25 +8,25 @@ import { problemNumberFor, searchTutorials } from './search'
 
 const primaryTags = ['All', 'Array', 'String', 'Linked List', 'Tree', 'Graph', 'DP', 'Matrix', 'Heap', 'Trie', 'Stack', 'Interval']
 const solutionLabels: Record<SolutionLanguage, string> = { cpp: 'C++', java: 'Java', js: 'JS' }
-type SiteSection = 'home' | 'games' | 'strategies' | 'quant' | 'learning' | 'exam' | 'algoLab' | 'onlineTool' | 'blog'
+type SiteSection = 'home' | 'games' | 'strategies' | 'helios' | 'learning' | 'exam' | 'algoLab' | 'easyDb' | 'blog'
 
 const siteSections: Array<{ id: SiteSection; label: string; eyebrow: string; title: string; summary: string; status: string }> = [
   { id: 'games', label: '遊戲', eyebrow: 'PLAY', title: '遊戲', summary: '互動遊戲與實驗作品。', status: '準備中' },
   { id: 'strategies', label: '交易策略', eyebrow: 'STRATEGY', title: '交易策略', summary: '策略研究與市場觀察。', status: '準備中' },
-  { id: 'quant', label: '量化平台', eyebrow: 'QUANT', title: '量化平台', summary: '量化研究與平台入口。', status: '準備中' },
+  { id: 'helios', label: 'Helios', eyebrow: 'HELIOS', title: 'Helios', summary: '量化研究、市場資料與平台狀態。', status: '規劃中' },
   { id: 'learning', label: '學習', eyebrow: 'LEARNING', title: '學習', summary: '學習記錄與知識整理。', status: '準備中' },
   { id: 'exam', label: '考研', eyebrow: 'EXAM', title: '考研', summary: '考研相關整理。', status: '準備中' },
   { id: 'algoLab', label: 'Algo Lab', eyebrow: 'ALGO LAB', title: 'Algo Lab', summary: '算法題目、思路講解與 dry-run。', status: '已開放' },
-  { id: 'onlineTool', label: 'Online Tool', eyebrow: 'TOOLS', title: 'Online Tool', summary: '可在網站使用的小工具集合。', status: '準備中' },
+  { id: 'easyDb', label: 'Easy DB', eyebrow: 'DATABASE', title: 'Easy DB', summary: 'PostgreSQL schema、查詢筆記與資料庫學習工具。', status: '規劃中' },
   { id: 'blog', label: '個人 blog', eyebrow: 'BLOG', title: '個人 blog', summary: '文章與公開記錄。', status: '準備中' },
 ]
 
-const onlineTools = [
+const easyDbTools = [
   {
     id: 'easy-pg',
     label: 'DATABASE',
-    title: 'Easy PG',
-    status: '準備中',
+    title: 'Easy DB / Easy PG',
+    status: '規劃中',
     summary: 'PostgreSQL schema、查詢筆記和資料庫學習工具。',
     points: ['Schema browser', 'Query notes', 'PostgreSQL learning'],
   },
@@ -81,7 +81,7 @@ function ProjectHub({ onSelect }: { onSelect: (section: SiteSection) => void }) 
   </>
 }
 
-function ProjectPlaceholder({ section }: { section: Exclude<SiteSection, 'home' | 'quant' | 'algoLab' | 'blog' | 'onlineTool'> }) {
+function ProjectPlaceholder({ section }: { section: Exclude<SiteSection, 'home' | 'helios' | 'algoLab' | 'blog' | 'easyDb'> }) {
   const item = siteSections.find(entry => entry.id === section)!
   const nextBySection: Record<typeof section, string[]> = {
     games: ['內容準備中。', '公開後會出現在這裡。', '感謝等待。'],
@@ -100,16 +100,16 @@ function ProjectPlaceholder({ section }: { section: Exclude<SiteSection, 'home' 
   </section>
 }
 
-function OnlineToolSection() {
+function EasyDbSection() {
   return <section className="tools-shell">
     <div className="tools-head">
-      <p className="eyebrow">ONLINE TOOL</p>
-      <h1>Online Tool</h1>
-      <p>可直接使用的小工具集合。</p>
+      <p className="eyebrow">EASY DB</p>
+      <h1>Easy DB</h1>
+      <p>資料庫工具會先以 PostgreSQL 為核心，公開文件與範例，真正的連線與查詢操作只會放在登入後的安全邊界內。</p>
     </div>
 
     <div className="tools-grid">
-      {onlineTools.map(tool => <article key={tool.id} className="tool-card">
+      {easyDbTools.map(tool => <article key={tool.id} className="tool-card">
         <span>{tool.label}</span>
         <div className="tool-title-row">
           <h2>{tool.title}</h2>
@@ -124,7 +124,7 @@ function OnlineToolSection() {
 
     <div className="easy-pg-plan">
       <section>
-        <h3>Easy PG</h3>
+        <h3>Easy DB / Easy PG</h3>
         <ol>
           <li>Schema browsing</li>
           <li>Query notes</li>
@@ -134,8 +134,9 @@ function OnlineToolSection() {
       <section>
         <h3>狀態</h3>
         <ol>
-          <li>工具準備中</li>
-          <li>公開後會出現在這裡</li>
+          <li>來源工具：/Users/cash/work_space/private/easy-pg</li>
+          <li>公開頁只放文件與範例</li>
+          <li>實際連線操作需要登入</li>
         </ol>
       </section>
     </div>
@@ -405,26 +406,26 @@ function BlogBody({ post }: { post: BlogPost }) {
   </div>
 }
 
-function QuantPlatformSection() {
+function HeliosSection() {
   return <>
     <section className="hero compact quant-hero">
-      <p className="eyebrow">QUANT</p>
-      <h1>量化平台</h1>
-      <p className="lead">量化研究與平台入口。</p>
+      <p className="eyebrow">HELIOS</p>
+      <h1>Helios</h1>
+      <p className="lead">市場資料、量化研究與平台狀態會整理成公開研究頁；真正的操作面板保留在登入後的私有區域。</p>
       <div className="quant-status" aria-label="Quant platform status">
-        <div><span>research</span><b>market data</b></div>
-        <div><span>platform</span><b>quant tools</b></div>
-        <div><span>status</span><b>preparing</b></div>
+        <div><span>research</span><b>market data notes</b></div>
+        <div><span>platform</span><b>private dashboard</b></div>
+        <div><span>source</span><b>Helios repo</b></div>
       </div>
     </section>
 
     <section className="quant-shell">
       <div className="quant-head">
         <div>
-          <p className="eyebrow">QUANT PLATFORM</p>
-          <h2>量化研究與工具入口</h2>
+          <p className="eyebrow">HELIOS PLATFORM</p>
+          <h2>量化研究與平台狀態</h2>
         </div>
-        <p>公開內容整理後會逐步放到這裡。</p>
+        <p>公開頁只放整理後的研究內容和安全狀態摘要；資料擷取、券商設定、私有 logs 和寫入操作不公開。</p>
       </div>
 
       <div className="quant-grid">
@@ -440,15 +441,16 @@ function QuantPlatformSection() {
           <h3>內容</h3>
           <ol>
             <li>研究摘要</li>
-            <li>工具入口</li>
-            <li>公開紀錄</li>
+            <li>市場資料狀態</li>
+            <li>回測與策略筆記</li>
           </ol>
         </section>
         <section>
           <h3>狀態</h3>
           <ol>
-            <li>準備中</li>
-            <li>公開後會出現在這裡</li>
+            <li>來源 repo：/Users/cash/work_space/private/Helios</li>
+            <li>先接只讀摘要，再談 live adapter</li>
+            <li>私有操作需要登入</li>
           </ol>
         </section>
       </div>
@@ -525,9 +527,9 @@ function App() {
 
   const renderSection = () => {
     if (section === 'home') return <ProjectHub onSelect={setSection} />
-    if (section === 'quant') return <QuantPlatformSection />
+    if (section === 'helios') return <HeliosSection />
     if (section === 'blog') return <BlogSection />
-    if (section === 'onlineTool') return <OnlineToolSection />
+    if (section === 'easyDb') return <EasyDbSection />
     if (section !== 'algoLab') return <ProjectPlaceholder section={section} />
     return <>
       <section className="hero compact"><div className="hero-bg" /><p className="eyebrow">ALGO LAB</p><h1>先找題，再進 dry-run</h1><p className="lead">用題號、題名或分類進入教學；首頁只放能操作的入口。</p><div className="hero-actions"><a className="btn primary" href="#tutorials">搜尋題目</a></div></section>
@@ -536,7 +538,8 @@ function App() {
       <article className="lesson"><div className="lesson-head"><div><p className="eyebrow">{tutorial.group} • {tutorial.difficulty}</p><h2>{tutorial.title}</h2><p>{tutorial.summary}</p></div><Tags tags={tutorial.tags} /></div>
         <div className="idea"><h3>思路講解</h3><ol>{tutorial.idea.map(i => <li key={i}>{i}</li>)}</ol><p className="complexity">{tutorial.complexity}</p></div>
         <div className="dryrun"><div className="step-panel"><div className="step-top"><span>Step {stepIndex + 1}/{tutorial.steps.length}</span><h3>{step.title}</h3><p>{step.explain}</p></div><Visualizer step={step} /><div className="controls"><button onClick={() => setStepIndex(Math.max(0, stepIndex - 1))} disabled={stepIndex === 0}>← 上一步</button><button onClick={() => setStepIndex(Math.min(tutorial.steps.length - 1, stepIndex + 1))} disabled={stepIndex === tutorial.steps.length - 1}>下一步 →</button></div></div>
-          <div className="state-panel"><h3>當前變數</h3><div className="vars">{Object.entries(step.variables).map(([k, v]) => <div key={k}><span>{k}</span><b>{String(v)}</b></div>)}</div><VariableTimeline steps={tutorial.steps} activeIndex={stepIndex} /><h3>目前步驟對應程式碼</h3><pre>{tutorial.code.map(line => <code key={line} className={line === step.codeLine ? 'line active' : 'line'}>{line}</code>)}</pre><Solutions tutorial={tutorial} open={solutionOpen} language={solutionLanguage} onToggle={() => setSolutionOpen(!solutionOpen)} onLanguage={setSolutionLanguage} /></div></div>
+          <div className="state-panel"><h3>當前變數</h3><div className="vars">{Object.entries(step.variables).map(([k, v]) => <div key={k}><span>{k}</span><b>{String(v)}</b></div>)}</div><VariableTimeline steps={tutorial.steps} activeIndex={stepIndex} /><h3>目前步驟對應程式碼</h3><pre>{tutorial.code.map(line => <code key={line} className={line === step.codeLine ? 'line active' : 'line'}>{line}</code>)}</pre></div></div>
+        <Solutions tutorial={tutorial} open={solutionOpen} language={solutionLanguage} onToggle={() => setSolutionOpen(!solutionOpen)} onLanguage={setSolutionLanguage} />
       </article></section>
     </>
   }

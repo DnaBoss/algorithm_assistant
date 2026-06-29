@@ -97,7 +97,7 @@ Current state:
 - Searchable tutorials.
 - Dry-run steps.
 - Variable state and timeline.
-- Full solutions.
+- Full-width complete solutions.
 
 Next requirements:
 
@@ -105,7 +105,6 @@ Next requirements:
 - Track hierarchy such as `Algo > Blind 75`, `Algo > Top 150`, and
   rank-point-based selection.
 - Public comments and reactions for problem notes.
-- Full-width solution display with no unnecessary horizontal scrolling.
 
 ### Helios
 
@@ -119,7 +118,8 @@ Current source:
 Integration plan:
 
 - Phase 1: public landing page explaining Helios as research infrastructure,
-  without exposing private trade operations.
+  without exposing private trade operations. Initial shell exists in this
+  branch.
 - Phase 2: read-only dashboard cards sourced from exported/status JSON, such as
   ingestion state and research notes.
 - Phase 3: authenticated operational dashboard for market-data collection
@@ -145,7 +145,7 @@ Integration plan:
 
 - Phase 1: rename all public copy to Easy DB or Easy PG consistently. Preferred
   public section label: Easy DB. Tool label may remain Easy PG if the exact
-  feature is PostgreSQL-specific.
+  feature is PostgreSQL-specific. Initial shell exists in this branch.
 - Phase 2: embed or reimplement the public landing and schema-view workflow in
   ExactlyOne.
 - Phase 3: authenticated connection-profile management.
@@ -176,7 +176,9 @@ Status: partially implemented on `feature/exactlyone-platform-integration`.
 - Blog public surface exists.
 - Admin editor exists.
 - Rust API exists.
-- Still needs local verification, branch review, and deployment decision.
+- Local lint, frontend/API tests, frontend build, and API check pass on this
+  branch.
+- Still needs browser screenshot review and deployment decision.
 
 ### M2: Blog Security And Community
 
@@ -193,23 +195,23 @@ Status: not started.
 Status: partially implemented.
 
 - Existing Algo Lab is present.
-- Needs personal notes, comment/reaction integration, track hierarchy, and
-  full-width solution presentation.
+- Complete solutions now render as an independent full-width section.
+- Needs personal notes, comment/reaction integration, and track hierarchy.
 
 ### M4: Easy DB Integration
 
-Status: not started.
+Status: partially implemented.
 
 - Confirm whether to integrate by iframe, reverse proxy, shared Rust module, or
   reimplementation.
-- Add public landing page and authenticated admin-only operations.
-- Remove any remaining old product naming from public UI.
+- Public Easy DB shell exists.
+- Needs authenticated admin-only operations.
 
 ### M5: Helios Integration
 
-Status: not started.
+Status: partially implemented.
 
-- Define public research pages.
+- Public Helios shell exists.
 - Define private operational dashboard.
 - Choose export-file, API adapter, or database read model.
 - Add read-only status proof before live operations.
@@ -226,16 +228,13 @@ Status: partially designed.
 ## Next Action Queue
 
 1. Verify `feature/exactlyone-platform-integration` locally.
-2. Remove any public wording that looks like internal planning.
-3. Fix Algo Lab solution display so complete answers get independent full-width
-   space.
-4. Confirm Blog first page is visually complete enough to replace Algo Lab as
+2. Confirm Blog first page is visually complete enough to replace Algo Lab as
    the homepage.
-5. Add owner password change and TOTP plan to backend tasks.
-6. Decide Easy DB naming in UI: `Easy DB` as section, `Easy PG` as PostgreSQL
-   tool.
-7. Create Helios public landing page with no private operational exposure.
-8. Deploy only after one coherent feature slice passes local verification.
+3. Add owner password change and TOTP plan to backend tasks.
+4. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
+   reimplementation.
+5. Add Helios read-only status proof before live operations.
+6. Deploy only after one coherent feature slice passes local verification.
 
 ## Progress Log
 
@@ -246,3 +245,10 @@ Status: partially designed.
 - Removed the old assistant-prefixed remote branch and continued work on
   `feature/exactlyone-platform-integration`.
 - Added this integration roadmap for Helios, Algo Lab, Blog, and Easy DB.
+- Added public Helios and Easy DB section labels.
+- Moved Algo Lab complete solutions out of the right-side state panel and into a
+  full-width section.
+- Verified `npm run lint`, `npm run test`, `npm run build`, and
+  `npm run build:api`.
+- Started local Vite preview on `http://127.0.0.1:5174/`; browser screenshot
+  verification still needs to be completed before production deployment.
