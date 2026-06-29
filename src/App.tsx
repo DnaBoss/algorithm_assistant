@@ -56,21 +56,29 @@ const quantPanels = [
 ]
 
 function ProjectHub({ onSelect }: { onSelect: (section: SiteSection) => void }) {
+  const directorySections = siteSections.filter(item => item.id !== 'blog')
+
   return <>
     <section className="hero compact hub-hero">
       <div className="hero-bg" />
-      <p className="eyebrow">EXACTLYONE</p>
-      <h1>ExactlyOne</h1>
-      <p className="lead">凡人</p>
+      <p className="eyebrow">EXACTLYONE BLOG</p>
+      <h1>個人 blog</h1>
+      <p className="lead">讀書、工作、考研、side project、Algo Lab、Helios 和 Easy DB 的公開整理入口。</p>
+      <div className="hero-actions">
+        <button className="btn primary" onClick={() => onSelect('blog')}>閱讀 blog</button>
+        <button className="btn secondary" onClick={() => onSelect('algoLab')}>進入 Algo Lab</button>
+      </div>
     </section>
+
+    <BlogSection />
 
     <section className="project-hub" aria-label="ExactlyOne sections">
       <div className="hub-head">
         <p className="eyebrow">SECTIONS</p>
-        <h2>底下的專案區塊</h2>
+        <h2>其他主要區塊</h2>
       </div>
       <div className="project-grid">
-        {siteSections.map(item => <button key={item.id} className="project-card" onClick={() => onSelect(item.id)}>
+        {directorySections.map(item => <button key={item.id} className="project-card" onClick={() => onSelect(item.id)}>
           <span>{item.eyebrow}</span>
           <h3>{item.title}</h3>
           <p>{item.summary}</p>

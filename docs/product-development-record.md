@@ -47,6 +47,8 @@ This file is a public-safe product record.
 - Renamed public navigation from generic quant/tool labels to Helios and Easy
   DB.
 - Moved Algo Lab complete solutions into an independent full-width section.
+- Changed the homepage direction to Blog-first while keeping Helios, Algo Lab,
+  Easy DB, and other major sections reachable from the home page.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old assistant-prefixed remote branch and continued branch hygiene

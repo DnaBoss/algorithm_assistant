@@ -172,7 +172,8 @@ Status: in progress.
 
 Status: partially implemented on `feature/exactlyone-platform-integration`.
 
-- Home hub exists.
+- Home is now Blog-first and keeps major section entry cards below the blog
+  surface.
 - Blog public surface exists.
 - Admin editor exists.
 - Rust API exists.
@@ -248,6 +249,8 @@ Status: partially designed.
 - Added public Helios and Easy DB section labels.
 - Moved Algo Lab complete solutions out of the right-side state panel and into a
   full-width section.
+- Changed the homepage from a generic section hub to a Blog-first page with
+  major section entry cards below it.
 - Verified `npm run lint`, `npm run test`, `npm run build`, and
   `npm run build:api`.
 - Started local Vite preview on `http://127.0.0.1:5174/`; browser screenshot

@@ -52,7 +52,7 @@ Public architecture snapshot for the ExactlyOne website.
 
 ## Public Surface
 
-- ExactlyOne home hub with public sections.
+- ExactlyOne Blog-first home page with major public section entry cards.
 - Public Helios section shell with private-operation boundary copy.
 - Public Easy DB section shell with Easy PG as the PostgreSQL-focused tool.
 - Algo Lab search and filtering.
