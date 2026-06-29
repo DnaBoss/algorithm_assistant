@@ -1,0 +1,47 @@
+substitutions:
+  _REGION: asia-east1
+  _REPOSITORY: exactlyone
+  _SERVICE: exactlyone-web
+  _IMAGE: exactlyone-web
+  _TAG: latest
+  _DATABASE_URL_SECRET: exactlyone-database-url
+  _ADMIN_JWT_SECRET: exactlyone-admin-jwt-secret
+  _CLOUD_SQL_INSTANCE: ''
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:${_TAG}
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:latest
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:${_TAG}
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:latest
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:${_TAG}
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --set-env-vars=STATIC_DIR=/app/dist,BLOG_MEDIA_DIR=/tmp/exactlyone-media,BLOG_MEDIA_PUBLIC_PATH=/media,AUTO_MIGRATE=true,NODE_ENV=production
+      - --set-secrets=DATABASE_URL=${_DATABASE_URL_SECRET}:latest,ADMIN_JWT_SECRET=${_ADMIN_JWT_SECRET}:latest
+      - --add-cloudsql-instances=${_CLOUD_SQL_INSTANCE}
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:${_TAG}
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:latest

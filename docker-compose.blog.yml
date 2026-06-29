@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: exactlyone
+      POSTGRES_PASSWORD: exactlyone
+      POSTGRES_DB: exactlyone
+    ports:
+      - "15433:5432"
+    volumes:
+      - exactlyone_blog_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U exactlyone -d exactlyone"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  exactlyone_blog_pg:

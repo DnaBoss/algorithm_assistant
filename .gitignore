@@ -11,6 +11,14 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+storage/
+backups/
+server/target/
+
+# Local-only files.
+.codex/
+*.local.md
 
 # Editor directories and files
 .vscode/*

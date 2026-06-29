@@ -1,11 +1,18 @@
 {
-  "name": "algorithm_assistant",
+  "name": "exactlyone",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "cargo run --manifest-path server/Cargo.toml -- serve",
+    "db:migrate": "cargo run --manifest-path server/Cargo.toml -- migrate",
+    "db:seed-admin": "cargo run --manifest-path server/Cargo.toml -- seed-admin",
     "build": "tsc -b && vite build",
+    "build:api": "cargo check --manifest-path server/Cargo.toml",
+    "test": "npm run test:frontend && npm run test:api",
+    "test:frontend": "vitest run",
+    "test:api": "cargo test --manifest-path server/Cargo.toml",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -25,6 +32,7 @@
     "globals": "^17.6.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "^4.1.9"
   }
 }

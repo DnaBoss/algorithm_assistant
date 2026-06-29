@@ -1,42 +1,45 @@
-# Algorithm Assistant
+# ExactlyOne
 
-Interactive algorithm learning site inspired by Labuladong-style explanations, focused first on Blind / LeetCode 75.
+ExactlyOne is a personal website hub for public projects, tools, learning
+notes, Algo Lab, and a personal blog.
 
-## Implemented now
+## Current Surface
 
-- React + TypeScript + Vite single-page learning site.
-- Dark, documentation-oriented UI suitable for long reading.
-- Multi-tag tutorial index: one problem can be `Blind 75`, `Tree`, `Beginner`, `DFS`, etc.
-- Whiteboard-style dry-run player with **previous / next** controls.
-- Current variable table for every step.
-- Visualizers for array/hash map movement, linked-list pointer rewiring, binary-tree pointer swapping, and stack state changes.
-- Initial tutorials: Two Sum, Merge Two Sorted Lists, Invert Binary Tree, Valid Parentheses.
-
-## Roadmap
-
-- Move the site toward a personal blog and knowledge base with Algo Lab as one
-  section.
-- Add post authoring, Markdown editing, comments, reactions, and owner admin.
-- Add resume timeline, calendar, Markdown todo, and Easy PG.
-- Continue expanding Algo Lab paths such as Blind 75, Top 150, rank-point
-  selection, SQL, and category-based practice.
-
-See [docs/product-development-record.md](docs/product-development-record.md) for
-the durable product plan and [docs/current-architecture.md](docs/current-architecture.md)
-for the architecture snapshot that should be updated after each feature branch.
+- React + TypeScript + Vite single-page site shell.
+- ExactlyOne home surface with project sections.
+- Algo Lab tutorial index with search, tags, dry-run steps, variable state, and
+  solution tabs.
+- Online Tool section with Easy PG as the first listed tool.
+- Personal blog section with published-only data, search, category/tag filters,
+  article reading view, and empty states.
+- Rust blog API for content, admin, migrations, and media.
 
 ## Development
 
 ```bash
 npm install
 npm run dev
+npm run test
 npm run build
 ```
 
-All normal development should start from `develop`, continue on a short-lived
-topic branch, and merge back into `develop` after checks pass. See
-[CONTRIBUTING.md](CONTRIBUTING.md) for the full Git flow.
+Engineering rules live in
+[docs/engineering-standards.md](docs/engineering-standards.md). New work should
+keep design patterns purposeful, separate logic from operations, and add tests
+proportional to the risk of the change.
 
-Deployment uses a manual GitHub Actions workflow that builds the Vite site and
-syncs `dist/` to `essence` through `bastion`. See
-[docs/deployment.md](docs/deployment.md).
+## Blog API
+
+```bash
+docker compose -f docker-compose.blog.yml up -d
+npm run db:migrate
+npm run dev:api
+```
+
+See [docs/blog-content-system.md](docs/blog-content-system.md) for the blog API,
+admin editor, media boundary, and backup workflow.
+
+## Deployment
+
+Production targets GCP Cloud Run as a single Rust-served entrypoint for the
+frontend and API. See [docs/deployment.md](docs/deployment.md).

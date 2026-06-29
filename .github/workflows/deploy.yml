@@ -2,13 +2,9 @@ name: deploy
 
 on:
   workflow_dispatch:
-  # Uncomment below to deploy every push to develop.
-  # push:
-  #   branches:
-  #     - develop
-  # pull_request:
-  #   branches:
-  #     - develop
+  push:
+    branches:
+      - main
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -16,15 +12,19 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write
 
 env:
   NODE_VERSION: ${{ vars.NODE_VERSION || '22' }}
-  DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '' }}
+  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  GCP_REGION: ${{ vars.GCP_REGION || 'asia-east1' }}
+  ARTIFACT_REPOSITORY: ${{ vars.ARTIFACT_REPOSITORY || 'exactlyone' }}
+  CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE || 'exactlyone-web' }}
+  CLOUD_SQL_INSTANCE: ${{ vars.CLOUD_SQL_INSTANCE }}
 
 jobs:
   ci:
     runs-on: ubuntu-latest
-    environment: develop
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,101 +38,43 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run tests
+        run: npm run test
+
       - name: Run lint
         run: npm run lint
 
-      - name: Build site
+      - name: Build frontend
         run: npm run build
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: algorithm-assistant-dist
-          path: dist/
-          if-no-files-found: error
+      - name: Check Rust API
+        run: npm run build:api
 
-  cd:
+  deploy:
     needs: [ci]
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    environment: develop
+    environment: production
     steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          name: algorithm-assistant-dist
-          path: dist/
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      - name: Install SSH key
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.GH_ACTION_SSH_PRIVATE_KEY }}
-          BASTION_HOST: ${{ secrets.BASTION_HOST }}
-          BASTION_USER: ${{ secrets.BASTION_USER }}
-          ESSENCE_HOST: ${{ secrets.ESSENCE_HOST }}
-          ESSENCE_USER: ${{ secrets.ESSENCE_USER }}
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Submit Cloud Build deployment
         run: |
           set -euo pipefail
-
-          test -n "${SSH_PRIVATE_KEY}"
-          test -n "${BASTION_HOST}"
-          test -n "${BASTION_USER}"
-          test -n "${ESSENCE_HOST}"
-          test -n "${ESSENCE_USER}"
-
-          mkdir -p "$HOME/.ssh"
-          chmod 700 "$HOME/.ssh"
-          printf '%s\n' "${SSH_PRIVATE_KEY}" > "$HOME/.ssh/deploy_key"
-          chmod 600 "$HOME/.ssh/deploy_key"
-
-          cat > "$HOME/.ssh/config" <<EOF
-          Host bastion
-            HostName ${BASTION_HOST}
-            User ${BASTION_USER}
-            IdentityFile ~/.ssh/deploy_key
-            IdentitiesOnly yes
-            StrictHostKeyChecking accept-new
-
-          Host essence
-            HostName ${ESSENCE_HOST}
-            User ${ESSENCE_USER}
-            IdentityFile ~/.ssh/deploy_key
-            IdentitiesOnly yes
-            ProxyJump bastion
-            StrictHostKeyChecking accept-new
-          EOF
-          chmod 600 "$HOME/.ssh/config"
-
-      - name: Verify SSH route
-        run: |
-          set -euo pipefail
-          ssh bastion 'echo "bastion ok: $(hostname)"'
-          ssh essence 'echo "essence ok: $(hostname)"'
-
-      - name: Deploy through bastion
-        env:
-          DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
-          RELEASE_ID: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-
-          if [ -z "${DEPLOY_PATH}" ]; then
-            DEPLOY_PATH="$(ssh essence 'printf "%s" "$HOME/algorithm-assistant"')"
-          fi
-
-          RELEASE_PATH="${DEPLOY_PATH%/}/releases/${RELEASE_ID}"
-          CURRENT_PATH="${DEPLOY_PATH%/}/current"
-
-          ssh essence "mkdir -p '${RELEASE_PATH}'"
-          rsync -az --delete -e ssh dist/ "essence:${RELEASE_PATH}/"
-          ssh essence "ln -sfn '${RELEASE_PATH}' '${CURRENT_PATH}'"
-          ssh essence "find '${DEPLOY_PATH%/}/releases' -mindepth 1 -maxdepth 1 -type d ! -path '${RELEASE_PATH}' -printf '%T@ %p\n' | sort -n | head -n -4 | cut -d' ' -f2- | xargs -r rm -rf"
-
-      - name: Smoke test deployed files
-        env:
-          DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
-        run: |
-          set -euo pipefail
-          if [ -z "${DEPLOY_PATH}" ]; then
-            DEPLOY_PATH="$(ssh essence 'printf "%s" "$HOME/algorithm-assistant"')"
-          fi
-          ssh essence "test -f '${DEPLOY_PATH%/}/current/index.html'"
+          test -n "${GCP_PROJECT_ID}"
+          gcloud builds submit \
+            --project="${GCP_PROJECT_ID}" \
+            --config=cloudbuild.yaml \
+            --substitutions="_REGION=${GCP_REGION},_REPOSITORY=${ARTIFACT_REPOSITORY},_SERVICE=${CLOUD_RUN_SERVICE},_CLOUD_SQL_INSTANCE=${CLOUD_SQL_INSTANCE},_TAG=${GITHUB_SHA::7}"

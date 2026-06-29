@@ -1,0 +1,12 @@
+.git
+.github
+.codex
+node_modules
+dist
+server/target
+storage
+backups
+.env
+*.local.md
+Dockerfile
+docker-compose.blog.yml
