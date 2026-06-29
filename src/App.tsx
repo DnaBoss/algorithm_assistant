@@ -63,7 +63,7 @@ function ProjectHub({ onSelect }: { onSelect: (section: SiteSection) => void }) 
       <div className="hero-bg" />
       <p className="eyebrow">EXACTLYONE BLOG</p>
       <h1>個人 blog</h1>
-      <p className="lead">讀書、工作、考研、side project、Algo Lab、Helios 和 Easy DB 的公開整理入口。</p>
+      <p className="lead">把日子寫成路。把路走成自己。</p>
       <div className="hero-actions">
         <button className="btn primary" onClick={() => onSelect('blog')}>閱讀 blog</button>
         <button className="btn secondary" onClick={() => onSelect('algoLab')}>進入 Algo Lab</button>

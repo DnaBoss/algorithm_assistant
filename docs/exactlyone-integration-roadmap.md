@@ -179,7 +179,8 @@ Status: partially implemented on `feature/exactlyone-platform-integration`.
 - Rust API exists.
 - Local lint, frontend/API tests, frontend build, and API check pass on this
   branch.
-- Still needs browser screenshot review and deployment decision.
+- Browser screenshot review passed for the Blog-first home page.
+- Still needs deployment decision.
 
 ### M2: Blog Security And Community
 
@@ -197,6 +198,7 @@ Status: partially implemented.
 
 - Existing Algo Lab is present.
 - Complete solutions now render as an independent full-width section.
+- Browser screenshot review passed for the expanded complete-solution layout.
 - Needs personal notes, comment/reaction integration, and track hierarchy.
 
 ### M4: Easy DB Integration
@@ -228,14 +230,12 @@ Status: partially designed.
 
 ## Next Action Queue
 
-1. Verify `feature/exactlyone-platform-integration` locally.
-2. Confirm Blog first page is visually complete enough to replace Algo Lab as
-   the homepage.
-3. Add owner password change and TOTP plan to backend tasks.
-4. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
+1. Add owner password change and TOTP plan to backend tasks.
+2. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
    reimplementation.
-5. Add Helios read-only status proof before live operations.
-6. Deploy only after one coherent feature slice passes local verification.
+3. Add Helios read-only status proof before live operations.
+4. Decide whether this verified Blog-first shell should deploy before the next
+   backend security slice.
 
 ## Progress Log
 
@@ -255,3 +255,11 @@ Status: partially designed.
   `npm run build:api`.
 - Started local Vite preview on `http://127.0.0.1:5174/`; browser screenshot
   verification still needs to be completed before production deployment.
+- Completed headless Chrome verification for the Blog-first home page:
+  `個人 blog` is the home hero, the blog surface renders before the section
+  cards, and Helios, Algo Lab, and Easy DB appear as major entry cards without
+  page-level horizontal scrolling.
+- Completed headless Chrome verification for Algo Lab complete solutions:
+  expanding the solution keeps it outside the right-side state panel, renders it
+  under the lesson content, uses `pre-wrap`, and does not create page-level
+  horizontal scrolling.
