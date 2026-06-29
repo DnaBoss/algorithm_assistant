@@ -9,10 +9,14 @@ notes, Algo Lab, and a personal blog.
 - ExactlyOne home surface with project sections.
 - Algo Lab tutorial index with search, tags, dry-run steps, variable state, and
   solution tabs.
-- Online Tool section with Easy PG as the first listed tool.
+- Helios and Easy DB are planned as first-class sections under the same site.
+- Online Tool section with Easy PG / Easy DB as the first listed tool.
 - Personal blog section with published-only data, search, category/tag filters,
   article reading view, and empty states.
 - Rust blog API for content, admin, migrations, and media.
+
+The active integration roadmap lives in
+[docs/exactlyone-integration-roadmap.md](docs/exactlyone-integration-roadmap.md).
 
 ## Development
 

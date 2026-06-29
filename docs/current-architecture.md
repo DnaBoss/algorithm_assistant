@@ -10,6 +10,8 @@ Public architecture snapshot for the ExactlyOne website.
 - Server language: Rust.
 - Styling: CSS files in `src/`.
 - Product name: ExactlyOne.
+- Public domain: `exactlyone.dev`.
+- Active integration branch: `feature/exactlyone-platform-integration`.
 
 ## Source Map
 
@@ -32,8 +34,10 @@ Public architecture snapshot for the ExactlyOne website.
   deployment.
 - `scripts/deploy-gcp.sh`: local GCP deployment helper.
 - `docs/blog-content-system.md`: public-safe local content-system workflow.
+- `docs/exactlyone-integration-roadmap.md`: long-task roadmap for integrating
+  Blog, Algo Lab, Helios, and Easy DB.
 - `docs/engineering-standards.md`: architecture, design-pattern, testing, and
-  AI skill-usage standards.
+  verification handoff standards.
 
 ## Engineering Boundary
 
@@ -64,3 +68,24 @@ Public architecture snapshot for the ExactlyOne website.
   authoring, live preview, save, and delete.
 - Blog API with published post reads, admin login, draft/published CRUD,
   migration runner, admin seed script, media upload boundary, and backup script.
+
+## Planned Integration Surfaces
+
+- Blog: homepage, owner-managed posts, future comments/reactions, password
+  change, and optional TOTP.
+- Algo Lab: tutorial section, personal notes per problem, public replies,
+  reactions, track hierarchy, and full-width complete solutions.
+- Helios: public research pages and authenticated operational dashboards sourced
+  from `/Users/cash/work_space/private/Helios`.
+- Easy DB: database tooling section sourced from
+  `/Users/cash/work_space/private/easy-pg`, with public docs/examples and
+  authenticated real connection operations.
+
+## External Source Repositories
+
+- Helios: `/Users/cash/work_space/private/Helios`.
+- Easy DB / Easy PG: `/Users/cash/work_space/private/easy-pg`.
+
+External source repos are not automatically part of the production build. Add an
+adapter, export, or copied module only after defining the public/private
+boundary in `docs/exactlyone-integration-roadmap.md`.

@@ -10,7 +10,7 @@ This document defines the baseline engineering rules for ExactlyOne.
 - Prefer small, explicit modules over large files that mix business rules,
   network calls, rendering, and side effects.
 - Public UI, public docs, and API responses must not expose private planning
-  notes, internal prompts, local paths, secrets, or deployment credentials.
+  notes, local paths, secrets, or deployment credentials.
 
 ## Design Patterns
 
@@ -86,22 +86,13 @@ visible UI and admin workflows.
 - Do not rewrite large data files unless the task is a data migration or content
   expansion.
 
-## Skill Usage For AI Agents
+## Verification Handoff
 
-AI agents working in this repository should use relevant Codex skills when the
-task matches them:
+Every handoff should state:
 
-- `browser:control-in-app-browser`: verify local UI, admin flows, responsive
-  layout, and browser behavior.
-- `github:github`: inspect repository, pull request, or issue context.
-- `github:gh-fix-ci`: diagnose and fix failing GitHub Actions checks.
-- `github:gh-address-comments`: address pull request review feedback.
-- `github:yeet`: publish a branch, push, and open a draft pull request.
-- `openai-docs`: answer or implement against current OpenAI product/API docs.
-- `skill-creator`: create or update a reusable Codex skill when a workflow
-  becomes repeated and specialized.
-- `plugin-creator`: create a local Codex plugin only when a plugin is explicitly
-  needed.
-
-If a needed skill is unavailable, continue with the best local fallback and
-record that limitation in the handoff.
+- Which checks passed.
+- Which checks were not run.
+- Whether production was deployed.
+- Whether the change affects public UI, backend behavior, database schema, or
+  deployment infrastructure.
+- Any follow-up risk that still needs a separate feature branch.
