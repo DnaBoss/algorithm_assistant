@@ -8,16 +8,20 @@ import {
   createAlgoReaction,
   createBlogComment,
   createBlogReaction,
+  deleteAdminAlgoNote,
   deleteAdminPost,
   disableAdminTotp,
   enableAdminTotp,
   fetchAlgoProblemNote,
+  fetchAdminAlgoNotes,
   fetchBlogInteractions,
   fetchAdminPosts,
   fetchAdminSecurity,
   fetchPublishedPosts,
+  saveAdminAlgoNote,
   saveAdminPost,
   setupAdminTotp,
+  type AlgoNotePayload,
   type AlgoProblemNote,
   type AdminSecurity,
   type BlogInteractions,
@@ -357,15 +361,28 @@ const emptyEditorPost: BlogPostPayload = {
   body: [{ kind: 'paragraph', text: '' }],
 }
 
+const emptyAlgoNote: AlgoNotePayload = {
+  status: 'draft',
+  title: '',
+  body: [{ kind: 'paragraph', text: '' }],
+}
+
+type AdminView = 'blog' | 'algo'
+
 function AdminBlogSection() {
   const [token, setToken] = useState(() => localStorage.getItem('exactlyone_admin_token') ?? '')
+  const [adminView, setAdminView] = useState<AdminView>('blog')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [totpCode, setTotpCode] = useState('')
   const [posts, setPosts] = useState<BlogPost[]>([])
+  const [algoNotes, setAlgoNotes] = useState<AlgoProblemNote[]>([])
   const [editingId, setEditingId] = useState<string | undefined>()
   const [draft, setDraft] = useState<BlogPostPayload>(emptyEditorPost)
   const [markdown, setMarkdown] = useState(blocksToMarkdown(emptyEditorPost.body))
+  const [selectedAlgoProblemId, setSelectedAlgoProblemId] = useState(tutorials[0]?.id ?? '')
+  const [algoDraft, setAlgoDraft] = useState<AlgoNotePayload>(emptyAlgoNote)
+  const [algoMarkdown, setAlgoMarkdown] = useState(blocksToMarkdown(emptyAlgoNote.body))
   const [message, setMessage] = useState('')
   const [security, setSecurity] = useState<AdminSecurity | null>(null)
   const [currentPassword, setCurrentPassword] = useState('')
@@ -387,11 +404,27 @@ function AdminBlogSection() {
     readMinutes: draft.readMinutes,
     body: markdownToBlocks(markdown),
   }
+  const selectedAlgoTutorial = tutorials.find(tutorial => tutorial.id === selectedAlgoProblemId) ?? tutorials[0]
+  const selectedAlgoNote = algoNotes.find(note => note.problemId === selectedAlgoProblemId)
+  const previewAlgoNote: AlgoProblemNote = {
+    id: selectedAlgoNote?.id ?? 'preview',
+    problemId: selectedAlgoProblemId,
+    status: algoDraft.status,
+    title: algoDraft.title || selectedAlgoTutorial?.title || 'Untitled',
+    updatedAt: selectedAlgoNote?.updatedAt ?? new Date().toISOString().slice(0, 10),
+    body: markdownToBlocks(algoMarkdown),
+  }
 
   const loadPosts = async (nextToken = token) => {
     if (!nextToken) return
     const nextPosts = await fetchAdminPosts(nextToken)
     setPosts(nextPosts)
+  }
+
+  const loadAlgoNotes = async (nextToken = token) => {
+    if (!nextToken) return
+    const nextNotes = await fetchAdminAlgoNotes(nextToken)
+    setAlgoNotes(nextNotes)
   }
 
   const loadSecurity = async (nextToken = token) => {
@@ -403,6 +436,7 @@ function AdminBlogSection() {
     if (!token) return undefined
     const timer = window.setTimeout(() => {
       loadPosts().catch(() => undefined)
+      loadAlgoNotes().catch(() => undefined)
       loadSecurity().catch(() => undefined)
     }, 0)
     return () => window.clearTimeout(timer)
@@ -415,6 +449,7 @@ function AdminBlogSection() {
     localStorage.setItem('exactlyone_admin_token', nextToken)
     setToken(nextToken)
     await loadPosts(nextToken)
+    await loadAlgoNotes(nextToken)
     await loadSecurity(nextToken)
   }
 
@@ -455,6 +490,7 @@ function AdminBlogSection() {
   }
 
   const editPost = (post: BlogPost) => {
+    setAdminView('blog')
     setEditingId(post.id)
     const nextDraft: BlogPostPayload = {
       slug: post.slug,
@@ -480,6 +516,7 @@ function AdminBlogSection() {
   }
 
   const startNewPost = () => {
+    setAdminView('blog')
     setEditingId(undefined)
     setDraft(emptyEditorPost)
     setMarkdown(blocksToMarkdown(emptyEditorPost.body))
@@ -500,10 +537,57 @@ function AdminBlogSection() {
     setDraft({ ...draft, readMinutes: estimateReadMinutes(value) })
   }
 
+  const editAlgoNote = (problemId: string) => {
+    setAdminView('algo')
+    const note = algoNotes.find(item => item.problemId === problemId)
+    const tutorial = tutorials.find(item => item.id === problemId)
+    setSelectedAlgoProblemId(problemId)
+    if (note) {
+      setAlgoDraft({ status: note.status, title: note.title, body: note.body })
+      setAlgoMarkdown(blocksToMarkdown(note.body))
+    } else {
+      const nextDraft = {
+        ...emptyAlgoNote,
+        title: tutorial ? `${tutorial.title} 筆記` : '',
+      }
+      setAlgoDraft(nextDraft)
+      setAlgoMarkdown(blocksToMarkdown(nextDraft.body))
+    }
+    setMessage('')
+  }
+
+  const updateAlgoMarkdown = (value: string) => {
+    setAlgoMarkdown(value)
+    setAlgoDraft({ ...algoDraft, body: markdownToBlocks(value) })
+  }
+
+  const saveAlgoNote = async () => {
+    setMessage('')
+    const parsedBody = markdownToBlocks(algoMarkdown)
+    const saved = await saveAdminAlgoNote(token, selectedAlgoProblemId, { ...algoDraft, body: parsedBody })
+    await loadAlgoNotes()
+    setMessage(saved?.status === 'published' ? 'Algo 筆記已發布' : 'Algo 筆記已儲存草稿')
+  }
+
+  const deleteAlgoNote = async () => {
+    if (!selectedAlgoNote) return
+    setMessage('')
+    await deleteAdminAlgoNote(token, selectedAlgoProblemId)
+    await loadAlgoNotes()
+    const tutorial = tutorials.find(item => item.id === selectedAlgoProblemId)
+    const nextDraft = {
+      ...emptyAlgoNote,
+      title: tutorial ? `${tutorial.title} 筆記` : '',
+    }
+    setAlgoDraft(nextDraft)
+    setAlgoMarkdown(blocksToMarkdown(nextDraft.body))
+    setMessage('Algo 筆記已刪除')
+  }
+
   if (!token) return <section className="admin-shell">
     <div className="admin-panel">
       <p className="eyebrow">ADMIN</p>
-      <h1>Blog Admin</h1>
+      <h1>ExactlyOne Admin</h1>
       <label><span>Email</span><input value={email} onChange={event => setEmail(event.target.value)} /></label>
       <label><span>Password</span><input type="password" value={password} onChange={event => setPassword(event.target.value)} /></label>
       <label><span>TOTP code</span><input inputMode="numeric" value={totpCode} onChange={event => setTotpCode(event.target.value)} placeholder="啟用二階段後需要" /></label>
@@ -514,20 +598,34 @@ function AdminBlogSection() {
 
   return <section className="admin-shell">
     <aside className="admin-panel admin-list">
-      <div className="admin-head-row"><div><p className="eyebrow">ADMIN</p><h1>Blog Admin</h1></div><button className="secondary" onClick={startNewPost}>新增</button></div>
+      <div className="admin-head-row"><div><p className="eyebrow">ADMIN</p><h1>ExactlyOne Admin</h1></div>{adminView === 'blog' && <button className="secondary" onClick={startNewPost}>新增</button>}</div>
       <section className="admin-security-card">
         <span>Security</span>
         <b>{security?.email ?? 'Owner'}</b>
         <small>TOTP：{security?.totpEnabled ? '已啟用' : '未啟用'}</small>
         {security?.passwordChangedAt && <small>密碼更新：{security.passwordChangedAt}</small>}
       </section>
-      {posts.map(post => <button key={post.id} className={editingId === post.id ? 'active' : ''} onClick={() => editPost(post)}>
+      <div className="admin-tabs">
+        <button className={adminView === 'blog' ? 'active' : ''} onClick={() => setAdminView('blog')}>Blog</button>
+        <button className={adminView === 'algo' ? 'active' : ''} onClick={() => editAlgoNote(selectedAlgoProblemId)}>Algo</button>
+      </div>
+      {adminView === 'blog' && posts.map(post => <button key={post.id} className={editingId === post.id ? 'active' : ''} onClick={() => editPost(post)}>
         <span>{post.status}</span>
         <b>{post.title || 'Untitled'}</b>
         <small>{post.updatedAt}</small>
       </button>)}
+      {adminView === 'algo' && <div className="admin-note-list">
+        <label><span>題目</span><select value={selectedAlgoProblemId} onChange={event => editAlgoNote(event.target.value)}>
+          {tutorials.map(tutorial => <option key={tutorial.id} value={tutorial.id}>{tutorial.title}</option>)}
+        </select></label>
+        {algoNotes.map(note => <button key={note.id} className={selectedAlgoProblemId === note.problemId ? 'active' : ''} onClick={() => editAlgoNote(note.problemId)}>
+          <span>{note.status}</span>
+          <b>{note.title || note.problemId}</b>
+          <small>{note.problemId} · {note.updatedAt}</small>
+        </button>)}
+      </div>}
     </aside>
-    <article className="admin-editor">
+    {adminView === 'blog' ? <article className="admin-editor">
       <label><span>Title</span><input value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label>
       <label><span>Slug</span><input value={draft.slug ?? ''} onChange={event => setDraft({ ...draft, slug: event.target.value })} /></label>
       <label><span>Excerpt</span><textarea value={draft.excerpt} onChange={event => setDraft({ ...draft, excerpt: event.target.value })} /></label>
@@ -578,7 +676,34 @@ function AdminBlogSection() {
           </section>
         </div>
       </section>
-    </article>
+    </article> : <article className="admin-editor">
+      <div className="admin-head-row">
+        <div>
+          <p className="eyebrow">ALGO NOTE</p>
+          <h2>{selectedAlgoTutorial?.title ?? 'Algo note'}</h2>
+        </div>
+        <small>{selectedAlgoProblemId}</small>
+      </div>
+      <label><span>題目</span><select value={selectedAlgoProblemId} onChange={event => editAlgoNote(event.target.value)}>
+        {tutorials.map(tutorial => <option key={tutorial.id} value={tutorial.id}>{tutorial.title}</option>)}
+      </select></label>
+      <div className="admin-grid compact">
+        <label><span>Status</span><select value={algoDraft.status} onChange={event => setAlgoDraft({ ...algoDraft, status: event.target.value as AlgoNotePayload['status'] })}><option value="draft">draft</option><option value="published">published</option></select></label>
+        <label><span>Title</span><input value={algoDraft.title} onChange={event => setAlgoDraft({ ...algoDraft, title: event.target.value })} /></label>
+      </div>
+      <label><span>Markdown</span><textarea className="body-markdown" value={algoMarkdown} onChange={event => updateAlgoMarkdown(event.target.value)} placeholder={'## 解題觀察\n\n寫下這題真正需要記住的思路、反例、複雜度取捨。'} /></label>
+      <section className="admin-preview" aria-label="algo note preview">
+        <span>Preview</span>
+        <h2>{previewAlgoNote.title}</h2>
+        <ContentBlocks body={previewAlgoNote.body} />
+      </section>
+      <div className="admin-actions">
+        <button className="primary" onClick={() => saveAlgoNote().catch(error => setMessage(error instanceof Error ? error.message : '儲存失敗'))}>儲存 Algo 筆記</button>
+        {selectedAlgoNote && <button className="danger" onClick={() => deleteAlgoNote().catch(error => setMessage(error instanceof Error ? error.message : '刪除失敗'))}>刪除</button>}
+        <button className="secondary" onClick={() => { localStorage.removeItem('exactlyone_admin_token'); setToken('') }}>登出</button>
+      </div>
+      {message && <p className="admin-message">{message}</p>}
+    </article>}
   </section>
 }
 

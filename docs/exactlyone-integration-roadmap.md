@@ -106,10 +106,11 @@ Current state:
 - Personal-note table and public note read endpoint keyed by `problem_id`.
 - Public comments and reactions keyed by `problem_id`.
 - Admin API endpoints exist for listing, upserting, and deleting problem notes.
+- Admin UI exists for editing, previewing, publishing, and deleting problem
+  notes.
 
 Next requirements:
 
-- Admin UI for editing problem notes.
 - Track hierarchy such as `Algo > Blind 75`, `Algo > Top 150`, and
   rank-point-based selection.
 - Moderation and rate limiting for problem comments/reactions.
@@ -207,8 +208,10 @@ Status: partially implemented.
 - Complete solutions now render as an independent full-width section.
 - Personal notes, public comments, and reactions have database/API foundations.
 - Public Algo lesson pages render the personal-note surface and interaction UI.
+- Admin page includes a first problem-note editor with title, status, Markdown
+  body, preview, save, and delete.
 - Browser screenshot review passed for the expanded complete-solution layout.
-- Needs admin note editor UI, moderation, rate limiting, and track hierarchy.
+- Needs moderation, rate limiting, and track hierarchy.
 
 ### M4: Easy DB Integration
 
@@ -240,11 +243,10 @@ Status: partially designed.
 ## Next Action Queue
 
 1. Add moderation tools and rate limiting for public Blog and Algo interactions.
-2. Add Admin UI for Algo problem notes.
-3. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
+2. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
    reimplementation.
-4. Add Helios read-only status proof before live operations.
-5. Decide whether this verified platform slice should deploy before the next
+3. Add Helios read-only status proof before live operations.
+4. Decide whether this verified platform slice should deploy before the next
    integration slice.
 
 ## Progress Log
@@ -284,6 +286,9 @@ Status: partially designed.
   migration `004_algo_notes_interactions.sql`, public problem note/comment/
   reaction API routes, admin note API routes, and lesson-page note/interaction
   UI.
+- Added the first `/admin` Algo problem-note editor with Blog/Algo admin tabs,
+  problem selection, Markdown editing, live preview, draft/published state,
+  save, and delete.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

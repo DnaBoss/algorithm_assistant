@@ -68,8 +68,8 @@ Public architecture snapshot for the ExactlyOne website.
 - Personal blog section with a published-only data layer, search, category/tag
   filters, article metadata, reading view, heading table of contents, and empty
   states.
-- Blog admin page with login, optional TOTP login code, post list,
-  draft/published editor, Markdown-like authoring, live preview, save, delete,
+- Admin page with login, optional TOTP login code, Blog post management, Algo
+  problem-note management, Markdown-like authoring, live preview, save, delete,
   password change, and TOTP setup/disable controls.
 - API with published Blog reads, admin login, draft/published Blog CRUD, Algo
   note admin endpoints, public comments, public reactions, password change,
@@ -81,8 +81,8 @@ Public architecture snapshot for the ExactlyOne website.
 - Blog: homepage, owner-managed posts, password change, optional TOTP, public
   comments/reactions, and future moderation tools.
 - Algo Lab: tutorial section, personal notes per problem, public replies,
-  reactions, track hierarchy, and full-width complete solutions. Admin note UI
-  and moderation tools are still planned.
+  reactions, admin note UI, track hierarchy, and full-width complete solutions.
+  Moderation tools are still planned.
 - Helios: public research page and future authenticated operational dashboards
   sourced from `/Users/cash/work_space/private/Helios`.
 - Easy DB: database tooling page sourced from

@@ -56,6 +56,7 @@ This file is a public-safe product record.
   browser-local reaction deduplication for published articles.
 - Added the first Algo Lab personal-note and community layer: problem notes by
   problem id, public comments, and browser-local reactions.
+- Added the first admin editor for Algo Lab problem notes.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

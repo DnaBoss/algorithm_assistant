@@ -11,6 +11,12 @@ export type BlogPostPayload = {
   body: BlogPost['body']
 }
 
+export type AlgoNotePayload = {
+  status: BlogStatus
+  title: string
+  body: BlogPost['body']
+}
+
 export type AdminSecurity = {
   email: string
   displayName: string
@@ -181,6 +187,29 @@ export async function saveAdminPost(token: string, payload: BlogPostPayload, id?
 
 export async function deleteAdminPost(token: string, id: string) {
   await requestJson<void>(`/api/admin/posts/${id}`, {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` },
+  })
+}
+
+export async function fetchAdminAlgoNotes(token: string) {
+  const data = await requestJson<{ notes: AlgoProblemNote[] }>('/api/admin/algo-notes', {
+    headers: { authorization: `Bearer ${token}` },
+  })
+  return data.notes
+}
+
+export async function saveAdminAlgoNote(token: string, problemId: string, payload: AlgoNotePayload) {
+  const data = await requestJson<AlgoProblemOutput>(`/api/admin/algo-notes/${encodeURIComponent(problemId)}`, {
+    method: 'PUT',
+    headers: { authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  })
+  return data.note
+}
+
+export async function deleteAdminAlgoNote(token: string, problemId: string) {
+  await requestJson<void>(`/api/admin/algo-notes/${encodeURIComponent(problemId)}`, {
     method: 'DELETE',
     headers: { authorization: `Bearer ${token}` },
   })
