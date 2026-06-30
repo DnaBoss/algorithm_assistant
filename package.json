@@ -11,6 +11,7 @@
     "build": "tsc -b && vite build",
     "build:api": "cargo check --manifest-path server/Cargo.toml",
     "check:platform-exports": "node scripts/import-platform-exports.mjs && node scripts/easy-pg-schema-to-platform-export.mjs --self-test",
+    "import:easy-pg-schema": "node scripts/easy-pg-schema-to-platform-export.mjs --input .platform-local/easy-pg-schema.local.json --output src/platformExports.generated.json --tables-file .platform-local/easy-pg-public-tables.local.txt",
     "check:tracks": "node scripts/check-track-pages.mjs",
     "release:gate": "bash scripts/release-gate.sh",
     "test": "npm run test:frontend && npm run test:api",

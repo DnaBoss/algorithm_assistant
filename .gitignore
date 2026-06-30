@@ -15,6 +15,9 @@ dist-ssr
 storage/
 backups/
 server/target/
+.platform-local/
+*.local.json
+*.local.txt
 
 # Local-only files.
 .codex/

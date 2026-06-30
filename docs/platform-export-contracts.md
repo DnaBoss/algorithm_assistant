@@ -107,6 +107,18 @@ node scripts/easy-pg-schema-to-platform-export.mjs \
   --table public.projects
 ```
 
+For a real local import, keep both the source export and allow-list outside git:
+
+```bash
+mkdir -p .platform-local
+cp easy-pg-schema-export.json .platform-local/easy-pg-schema.local.json
+printf '%s\n' public.users public.projects > .platform-local/easy-pg-public-tables.local.txt
+npm run import:easy-pg-schema
+npm run check:platform-exports
+```
+
+`.platform-local/`, `*.local.json`, and `*.local.txt` are ignored by git.
+
 Running the tool without arguments validates the current generated export:
 
 ```bash

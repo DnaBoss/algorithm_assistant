@@ -15,6 +15,7 @@ if (!options.input || !options.output) {
   usage()
   process.exit(1)
 }
+loadTableAllowList(options)
 
 const source = JSON.parse(fs.readFileSync(options.input, 'utf8'))
 const currentBundle = JSON.parse(fs.readFileSync(options.bundle, 'utf8'))
@@ -140,6 +141,7 @@ function parseArgs(args) {
     output: '',
     sourceLabel: 'source-derived Easy PG export',
     tables: [],
+    tablesFile: '',
   }
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]
@@ -162,11 +164,24 @@ function parseArgs(args) {
     } else if (arg === '--table') {
       options.tables.push(requireValue(arg, next))
       index += 1
+    } else if (arg === '--tables-file') {
+      options.tablesFile = requireValue(arg, next)
+      index += 1
     } else {
       throw new Error(`Unknown argument: ${arg}`)
     }
   }
   return options
+}
+
+function loadTableAllowList(options) {
+  if (!options.tablesFile) return
+  const file = fs.readFileSync(options.tablesFile, 'utf8')
+  const tables = file
+    .split(/\r?\n/)
+    .map(line => line.replace(/#.*/, '').trim())
+    .filter(Boolean)
+  options.tables.push(...tables)
 }
 
 function requireValue(arg, value) {
@@ -184,6 +199,7 @@ function usage() {
     '  --source-label text    Public label for the sanitized source.',
     '  --exported-at date     Export date, default today.',
     '  --table schema.table   Explicit allow-list entry. Repeat for multiple tables.',
+    '  --tables-file path     Newline-separated allow-list. Blank lines and # comments are ignored.',
   ].join('\n'))
 }
 
@@ -191,6 +207,7 @@ function selfTest() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exactlyone-easy-pg-'))
   const input = path.join(tempDir, 'easy-pg.json')
   const output = path.join(tempDir, 'platform.json')
+  const tablesFile = path.join(tempDir, 'tables.local.txt')
   fs.writeFileSync(input, `${JSON.stringify({
     tables: [
       {
@@ -219,6 +236,7 @@ function selfTest() {
       },
     ],
   }, null, 2)}\n`)
+  fs.writeFileSync(tablesFile, '# public allow-list\npublic.users\npublic.projects\n')
 
   const result = spawnSync(process.execPath, [
     'scripts/easy-pg-schema-to-platform-export.mjs',
@@ -230,10 +248,8 @@ function selfTest() {
     '2026-06-30',
     '--source-label',
     'self-test export',
-    '--table',
-    'public.users',
-    '--table',
-    'public.projects',
+    '--tables-file',
+    tablesFile,
   ], { cwd: process.cwd(), encoding: 'utf8' })
   if (result.status !== 0) {
     process.stderr.write(result.stderr)

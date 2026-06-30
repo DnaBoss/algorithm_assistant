@@ -48,7 +48,7 @@ Public architecture snapshot for the ExactlyOne website.
   DB public export bundles before they are committed to the frontend.
 - `scripts/easy-pg-schema-to-platform-export.mjs`: converts Easy PG schema
   exports into the platform export bundle using an explicit public table
-  allow-list.
+  allow-list or git-ignored local allow-list file.
 - `docs/blog-content-system.md`: public-safe local content-system workflow.
 - `docs/exactlyone-integration-roadmap.md`: long-task roadmap for integrating
   Blog, Algo Lab, Helios, and Easy DB.
@@ -86,7 +86,9 @@ Public architecture snapshot for the ExactlyOne website.
 - Public Easy DB schema data is loaded from the generated platform export
   bundle.
 - Easy PG source schema exports must pass the Easy PG sanitizer and explicit
-  table allow-list before they can update the public bundle.
+  table allow-list before they can update the public bundle. Local source
+  exports and allow-list files live under `.platform-local/`, which is ignored
+  by git.
 - Algo Lab search and filtering.
 - Algo Lab track hierarchy with Blind 75, Top 150, rating-based practice,
   category index, and multi-tag index pages.
