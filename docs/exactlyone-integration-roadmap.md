@@ -127,8 +127,8 @@ Current source:
 Integration plan:
 
 - Phase 1: public landing page explaining Helios as research infrastructure,
-  without exposing private trade operations. Initial shell exists in this
-  branch.
+  without exposing private trade operations. Initial public research/status
+  cards exist in this branch.
 - Phase 2: read-only dashboard cards sourced from exported/status JSON, such as
   ingestion state and research notes.
 - Phase 3: authenticated operational dashboard for market-data collection
@@ -232,10 +232,12 @@ Status: partially implemented.
 
 Status: partially implemented.
 
-- Public Helios shell exists.
+- Public Helios research/status section exists with read-only metrics,
+  research lanes, pipeline stages, research gates, and private-operation
+  boundaries.
 - Define private operational dashboard.
 - Choose export-file, API adapter, or database read model.
-- Add read-only status proof before live operations.
+- Add read-only status export proof before live operations.
 
 ### M6: Production Runtime
 
@@ -298,6 +300,9 @@ Status: partially designed.
 - Reworked Easy DB from a placeholder into a public schema-browser example with
   searchable sanitized tables, relation hints, workflow notes, and explicit
   private-operation boundaries.
+- Reworked Helios from a placeholder into a public read-only research/status
+  page with data quality gates, pipeline stages, and private-operation
+  boundaries.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

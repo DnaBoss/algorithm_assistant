@@ -60,6 +60,8 @@ This file is a public-safe product record.
 - Reworked Easy DB into a public PostgreSQL schema-browser example with
   searchable tables, column metadata, relation hints, and private-operation
   boundaries.
+- Reworked Helios into a public read-only research/status section with metrics,
+  research lanes, data pipeline stages, and private-operation boundaries.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

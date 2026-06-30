@@ -31,6 +31,7 @@ import {
 } from './blogApi'
 import { blocksToMarkdown, estimateReadMinutes, markdownToBlocks } from './blogEditor'
 import { easyDbCapabilities, easyDbExampleSchema, easyDbWorkflow, filterEasyDbTables } from './easyDbData'
+import { heliosMetrics, heliosPipeline, heliosQualityRules, heliosResearchLanes } from './heliosData'
 import { tutorials, type SolutionLanguage, type Step, type Tutorial } from './tutorialData'
 import { problemNumberFor, searchTutorials } from './search'
 
@@ -58,29 +59,6 @@ const siteSections: Array<{ id: SiteSection; label: string; eyebrow: string; tit
   { id: 'algoLab', label: 'Algo Lab', eyebrow: 'ALGO LAB', title: 'Algo Lab', summary: '算法題目、思路講解與 dry-run。', status: '已開放' },
   { id: 'easyDb', label: 'Easy DB', eyebrow: 'DATABASE', title: 'Easy DB', summary: 'PostgreSQL schema、查詢筆記與資料庫學習工具。', status: '規劃中' },
   { id: 'blog', label: '個人 blog', eyebrow: 'BLOG', title: '個人 blog', summary: '文章與公開記錄。', status: '準備中' },
-]
-
-const quantPanels = [
-  {
-    label: 'Research',
-    title: '研究',
-    text: '整理量化研究、回測觀察與市場資料視圖。',
-  },
-  {
-    label: 'Platform',
-    title: '平台',
-    text: '集中呈現交易系統與資料工具的公開入口。',
-  },
-  {
-    label: 'Notes',
-    title: '紀錄',
-    text: '保留研究過程、假設條件與結果摘要。',
-  },
-  {
-    label: 'Status',
-    title: '準備中',
-    text: '更多內容會在整理後公開。',
-  },
 ]
 
 function blogAnonymousKey() {
@@ -935,9 +913,11 @@ function HeliosSection() {
       <h1>Helios</h1>
       <p className="lead">市場資料、量化研究與平台狀態會整理成公開研究頁；真正的操作面板保留在登入後的私有區域。</p>
       <div className="quant-status" aria-label="Quant platform status">
-        <div><span>research</span><b>market data notes</b></div>
-        <div><span>platform</span><b>private dashboard</b></div>
-        <div><span>source</span><b>Helios repo</b></div>
+        {heliosMetrics.map(metric => <div key={metric.label}>
+          <span>{metric.label}</span>
+          <b>{metric.value}</b>
+          <small>{metric.note}</small>
+        </div>)}
       </div>
     </section>
 
@@ -951,28 +931,37 @@ function HeliosSection() {
       </div>
 
       <div className="quant-grid">
-        {quantPanels.map(panel => <article key={panel.label} className="quant-panel">
-          <span>{panel.label}</span>
+        {heliosResearchLanes.map(panel => <article key={panel.label} className="quant-panel">
+          <div className="quant-panel-head">
+            <span>{panel.label}</span>
+            <b>{panel.status}</b>
+          </div>
           <h3>{panel.title}</h3>
-          <p>{panel.text}</p>
+          <p>{panel.summary}</p>
         </article>)}
       </div>
 
-      <div className="quant-runtime">
+      <div className="helios-pipeline" aria-label="Helios data pipeline">
+        {heliosPipeline.map(stage => <article key={stage.stage}>
+          <span>{stage.stage}</span>
+          <h3>{stage.title}</h3>
+          <p>{stage.detail}</p>
+        </article>)}
+      </div>
+
+      <div className="quant-runtime helios-boundary">
         <section>
-          <h3>內容</h3>
+          <h3>Research gates</h3>
           <ol>
-            <li>研究摘要</li>
-            <li>市場資料狀態</li>
-            <li>回測與策略筆記</li>
+            {heliosQualityRules.map(rule => <li key={rule}>{rule}</li>)}
           </ol>
         </section>
         <section>
-          <h3>狀態</h3>
+          <h3>Private operations</h3>
           <ol>
-            <li>來源：private Helios project</li>
-            <li>先接只讀摘要，再談 live adapter</li>
-            <li>私有操作需要登入</li>
+            <li>Broker sessions and live trading actions require owner login.</li>
+            <li>Raw logs, credentials, restart controls, and write APIs are not exposed here.</li>
+            <li>The next public step is a read-only status export, not a live adapter.</li>
           </ol>
         </section>
       </div>

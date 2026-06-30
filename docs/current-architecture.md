@@ -54,7 +54,8 @@ Public architecture snapshot for the ExactlyOne website.
 ## Public Surface
 
 - ExactlyOne Blog-first home page with major public section entry cards.
-- Public Helios section shell with private-operation boundary copy.
+- Public Helios research/status section with read-only metrics, research lanes,
+  data pipeline stages, research gates, and private-operation boundary copy.
 - Public Easy DB section shell with Easy PG as the PostgreSQL-focused tool.
 - Easy DB public schema-browser surface with sanitized example tables, column
   search, relationship hints, workflow notes, and private-operation boundary.
@@ -85,8 +86,8 @@ Public architecture snapshot for the ExactlyOne website.
 - Algo Lab: tutorial section, personal notes per problem, public replies,
   reactions, admin note UI, track hierarchy, and full-width complete solutions.
   Moderation tools are still planned.
-- Helios: public research page and future authenticated operational dashboards
-  sourced from the private Helios project.
+- Helios: public research/status page sourced from sanitized Helios project
+  knowledge, plus future authenticated operational dashboards.
 - Easy DB: database tooling page sourced from the Easy PG app, with public
   docs/examples and authenticated real connection operations.
 
