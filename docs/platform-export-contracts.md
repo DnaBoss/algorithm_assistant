@@ -95,8 +95,22 @@ Use the import tool before moving a candidate source export into the frontend:
 node scripts/import-platform-exports.mjs candidate-platform-export.json src/platformExports.generated.json
 ```
 
+For Easy PG schema exports, use the sanitizer with an explicit table allow-list.
+The allow-list is required so private schemas are not published accidentally:
+
+```bash
+node scripts/easy-pg-schema-to-platform-export.mjs \
+  --input easy-pg-schema-export.json \
+  --output src/platformExports.generated.json \
+  --source-label "public Easy PG schema export" \
+  --table public.users \
+  --table public.projects
+```
+
 Running the tool without arguments validates the current generated export:
 
 ```bash
 npm run check:platform-exports
 ```
+
+`npm run check:platform-exports` also runs the Easy PG sanitizer self-test.

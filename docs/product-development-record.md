@@ -77,6 +77,8 @@ This file is a public-safe product record.
   and changed both public sections to render export metadata.
 - Added a generated platform export bundle plus validation/import tooling for
   future Helios and Easy DB source-derived exports.
+- Added an Easy PG schema sanitizer that converts source exports into the
+  public platform bundle only through an explicit table allow-list.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

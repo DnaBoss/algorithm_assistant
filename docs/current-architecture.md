@@ -46,6 +46,9 @@ Public architecture snapshot for the ExactlyOne website.
   scan, backup-helper presence, lint, tests, frontend build, and API check.
 - `scripts/import-platform-exports.mjs`: validates and normalizes Helios/Easy
   DB public export bundles before they are committed to the frontend.
+- `scripts/easy-pg-schema-to-platform-export.mjs`: converts Easy PG schema
+  exports into the platform export bundle using an explicit public table
+  allow-list.
 - `docs/blog-content-system.md`: public-safe local content-system workflow.
 - `docs/exactlyone-integration-roadmap.md`: long-task roadmap for integrating
   Blog, Algo Lab, Helios, and Easy DB.
@@ -82,6 +85,8 @@ Public architecture snapshot for the ExactlyOne website.
   safety rules, and sanitized table metadata.
 - Public Easy DB schema data is loaded from the generated platform export
   bundle.
+- Easy PG source schema exports must pass the Easy PG sanitizer and explicit
+  table allow-list before they can update the public bundle.
 - Algo Lab search and filtering.
 - Algo Lab track hierarchy with Blind 75, Top 150, rating-based practice,
   category index, and multi-tag index pages.

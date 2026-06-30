@@ -71,6 +71,9 @@ Adapter boundary rule:
   [platform-export-contracts.md](platform-export-contracts.md).
 - Candidate export bundles must pass `npm run check:platform-exports` before
   they are committed into `src/platformExports.generated.json`.
+- Easy PG schema exports must pass
+  `scripts/easy-pg-schema-to-platform-export.mjs` with explicit `--table`
+  allow-list entries before they update the public Easy DB bundle.
 
 ## Data Domains
 
@@ -174,7 +177,8 @@ Integration plan:
   ExactlyOne using sanitized exports from Easy PG. The first public schema
   export contract exists with schema version, source label, safety rules, and
   sanitized table metadata. An import gate now validates generated public
-  export bundles before release.
+  export bundles before release. The Easy PG sanitizer exists and requires an
+  explicit table allow-list.
 - Phase 3: authenticated connection-profile management and live schema export.
 - Phase 4: safe query notes and export-to-post workflow.
 
@@ -249,6 +253,7 @@ Status: partially implemented.
   snapshot, column search, SQL import, and schema export.
 - Public Easy DB schema export contract exists and feeds the schema browser.
 - Generated platform export bundle exists and is validated by release gate.
+- Easy PG schema-to-platform sanitizer exists with allow-list protection.
 - Need decide whether live private operations use iframe, reverse proxy, shared
   Rust module, or reimplementation.
 - Needs authenticated admin-only operations.
@@ -281,7 +286,8 @@ Status: partially implemented.
 
 ## Next Action Queue
 
-1. Generate the first source-derived sanitized Easy DB export from Easy PG.
+1. Generate the first source-derived sanitized Easy DB export from Easy PG using
+   the allow-list sanitizer.
 2. Generate the first source-derived sanitized Helios status export from
    Helios.
 3. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
@@ -347,6 +353,8 @@ Status: partially implemented.
 - Added public export contracts for Helios status and Easy DB schema data.
 - Added the generated platform export bundle and release-gate validation for
   Helios/Easy DB public exports.
+- Added the Easy PG schema-to-platform sanitizer with explicit table allow-list
+  protection.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

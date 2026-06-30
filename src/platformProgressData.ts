@@ -44,8 +44,8 @@ export const corePlatformAreas: PlatformProgress[] = [
     title: 'Easy DB',
     status: 'schema browser',
     publicSurface: 'PostgreSQL schema learning, column search, relationship hints, and query notes.',
-    completed: ['Sanitized example schema', 'Column search', 'Private connection boundary', 'Public schema export contract', 'Export import gate'],
-    next: 'Generate a source-derived sanitized schema export from Easy PG and add query-note publishing.',
+    completed: ['Sanitized example schema', 'Column search', 'Private connection boundary', 'Public schema export contract', 'Export import gate', 'Easy PG sanitizer'],
+    next: 'Run the Easy PG sanitizer on an approved table allow-list and add query-note publishing.',
   },
 ]
 
