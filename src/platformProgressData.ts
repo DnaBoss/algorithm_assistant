@@ -35,8 +35,8 @@ export const corePlatformAreas: PlatformProgress[] = [
     title: 'Helios',
     status: 'read-only public status',
     publicSurface: 'Quant research summaries, data-quality gates, and curated platform status.',
-    completed: ['Research lanes', 'Data pipeline stages', 'Private operations boundary', 'Public status export contract', 'Export import gate'],
-    next: 'Generate a source-derived sanitized status export from Helios before any live adapter.',
+    completed: ['Research lanes', 'Data pipeline stages', 'Private operations boundary', 'Public status export contract', 'Export import gate', 'Helios status sanitizer'],
+    next: 'Generate the first source-derived sanitized status export from Helios before any live adapter.',
   },
   {
     id: 'easyDb',

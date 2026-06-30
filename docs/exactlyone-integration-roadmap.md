@@ -71,6 +71,9 @@ Adapter boundary rule:
   [platform-export-contracts.md](platform-export-contracts.md).
 - Candidate export bundles must pass `npm run check:platform-exports` before
   they are committed into `src/platformExports.generated.json`.
+- Helios public status summaries must pass
+  `scripts/helios-status-to-platform-export.mjs` before they update the public
+  Helios bundle.
 - Easy PG schema exports must pass
   `scripts/easy-pg-schema-to-platform-export.mjs` with explicit `--table`
   allow-list entries or a git-ignored local allow-list file before they update
@@ -270,8 +273,10 @@ Status: partially implemented.
   boundaries.
 - Public Helios status export contract exists and feeds the status cards.
 - Generated platform export bundle exists and is validated by release gate.
+- Helios status-to-platform sanitizer exists.
 - Define private operational dashboard.
-- Generate a sanitized status export from Helios into this contract.
+- Generate the first source-derived sanitized status export from Helios into
+  this contract.
 - Choose export-file, API adapter, or database read model after the export
   proof is stable.
 
@@ -360,6 +365,7 @@ Status: partially implemented.
   protection.
 - Added and locally verified the git-ignored Easy PG import workflow using a
   real source export and local allow-list.
+- Added the Helios status-to-platform sanitizer and local import workflow.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

@@ -125,4 +125,27 @@ Running the tool without arguments validates the current generated export:
 npm run check:platform-exports
 ```
 
-`npm run check:platform-exports` also runs the Easy PG sanitizer self-test.
+For Helios status exports, prepare a small public summary JSON locally:
+
+```json
+{
+  "signals": [
+    { "label": "Engine", "value": "ready", "detail": "Public summary only." }
+  ],
+  "datasets": [
+    { "name": "Market data", "coverage": "curated status only", "cadence": "manual export", "gate": "no raw logs or private operations" }
+  ]
+}
+```
+
+Then import it through the same git-ignored local workspace:
+
+```bash
+mkdir -p .platform-local
+cp helios-status.json .platform-local/helios-status.local.json
+npm run import:helios-status
+npm run check:platform-exports
+```
+
+`npm run check:platform-exports` also runs the Easy PG and Helios sanitizer
+self-tests.

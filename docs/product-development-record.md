@@ -81,6 +81,8 @@ This file is a public-safe product record.
   public platform bundle only through an explicit table allow-list.
 - Added and verified the git-ignored local Easy PG import workflow for
   source-derived schema exports.
+- Added a Helios status sanitizer that converts curated local status summaries
+  into the public platform bundle.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

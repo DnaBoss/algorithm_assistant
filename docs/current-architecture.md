@@ -49,6 +49,8 @@ Public architecture snapshot for the ExactlyOne website.
 - `scripts/easy-pg-schema-to-platform-export.mjs`: converts Easy PG schema
   exports into the platform export bundle using an explicit public table
   allow-list or git-ignored local allow-list file.
+- `scripts/helios-status-to-platform-export.mjs`: converts curated Helios
+  public status summaries into the platform export bundle.
 - `docs/blog-content-system.md`: public-safe local content-system workflow.
 - `docs/exactlyone-integration-roadmap.md`: long-task roadmap for integrating
   Blog, Algo Lab, Helios, and Easy DB.
@@ -78,6 +80,8 @@ Public architecture snapshot for the ExactlyOne website.
 - Public Helios status export contract with schema version, export date,
   signals, and dataset coverage cards.
 - Public Helios data is loaded from the generated platform export bundle.
+- Helios source status must pass the Helios status sanitizer before it can
+  update the public bundle.
 - Public Easy DB section shell with Easy PG as the PostgreSQL-focused tool.
 - Easy DB public schema-browser surface with sanitized example tables, column
   search, relationship hints, workflow notes, and private-operation boundary.
