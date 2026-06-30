@@ -1,4 +1,4 @@
-use std::{env, net::SocketAddr, path::PathBuf};
+use std::{collections::HashSet, env, net::SocketAddr, path::PathBuf};
 
 use anyhow::{Context, Result};
 use argon2::{
@@ -11,7 +11,7 @@ use argon2::{
 use axum::{
     Json, Router,
     body::Bytes,
-    extract::{Multipart, Path, State},
+    extract::{Multipart, Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post, put},
@@ -103,6 +103,58 @@ struct BlogPostInput {
     tags: Vec<String>,
     read_minutes: i32,
     body: Vec<Value>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct BlogComment {
+    id: Uuid,
+    display_name: String,
+    body: String,
+    created_at: String,
+}
+
+#[derive(sqlx::FromRow)]
+struct BlogCommentRow {
+    id: Uuid,
+    display_name: String,
+    body: String,
+    created_at: DateTime<Utc>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct BlogReactionSummary {
+    reaction_type: String,
+    count: i64,
+    reacted: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct BlogInteractionsOutput {
+    comments: Vec<BlogComment>,
+    reactions: Vec<BlogReactionSummary>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BlogInteractionQuery {
+    anonymous_key: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BlogCommentInput {
+    display_name: Option<String>,
+    body: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BlogReactionInput {
+    reaction_type: String,
+    anonymous_key: String,
 }
 
 #[derive(Deserialize)]
@@ -251,6 +303,15 @@ async fn serve(config: Config, pool: PgPool) -> Result<()> {
     let app = Router::new()
         .route("/api/health", get(health))
         .route("/api/blog/posts", get(list_published_posts))
+        .route(
+            "/api/blog/posts/{slug}/interactions",
+            get(get_post_interactions),
+        )
+        .route("/api/blog/posts/{slug}/comments", post(create_post_comment))
+        .route(
+            "/api/blog/posts/{slug}/reactions",
+            post(create_post_reaction),
+        )
         .route("/api/blog/posts/{slug}", get(get_published_post))
         .route("/api/admin/login", post(login))
         .route("/api/admin/security", get(admin_security))
@@ -316,6 +377,71 @@ async fn get_published_post(
         })
     })
     .ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "not_found"))
+}
+
+async fn get_post_interactions(
+    State(state): State<AppState>,
+    Path(slug): Path<String>,
+    Query(query): Query<BlogInteractionQuery>,
+) -> Result<Json<BlogInteractionsOutput>, ApiError> {
+    let post_id = published_post_id(&state.pool, &slug).await?;
+    Ok(Json(
+        load_blog_interactions(&state.pool, post_id, query.anonymous_key.as_deref()).await?,
+    ))
+}
+
+async fn create_post_comment(
+    State(state): State<AppState>,
+    Path(slug): Path<String>,
+    Json(input): Json<BlogCommentInput>,
+) -> Result<(StatusCode, Json<BlogInteractionsOutput>), ApiError> {
+    let post_id = published_post_id(&state.pool, &slug).await?;
+    let display_name = clean_display_name(input.display_name.as_deref())?;
+    let body = clean_comment_body(&input.body)?;
+    sqlx::query("insert into blog_comments (post_id, display_name, body) values ($1, $2, $3)")
+        .bind(post_id)
+        .bind(display_name)
+        .bind(body)
+        .execute(&state.pool)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(load_blog_interactions(&state.pool, post_id, None).await?),
+    ))
+}
+
+async fn create_post_reaction(
+    State(state): State<AppState>,
+    Path(slug): Path<String>,
+    Json(input): Json<BlogReactionInput>,
+) -> Result<Json<BlogInteractionsOutput>, ApiError> {
+    let post_id = published_post_id(&state.pool, &slug).await?;
+    if !is_reaction_type(&input.reaction_type) {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "invalid_reaction_type",
+        ));
+    }
+    let anonymous_key = clean_anonymous_key(&input.anonymous_key)?;
+    sqlx::query(
+        r#"
+        insert into blog_reactions (post_id, reaction_type, anonymous_key)
+        values ($1, $2, $3)
+        on conflict (post_id, reaction_type, anonymous_key) do nothing
+        "#,
+    )
+    .bind(post_id)
+    .bind(input.reaction_type)
+    .bind(&anonymous_key)
+    .execute(&state.pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+
+    Ok(Json(
+        load_blog_interactions(&state.pool, post_id, Some(&anonymous_key)).await?,
+    ))
 }
 
 async fn login(
@@ -384,16 +510,14 @@ async fn change_admin_password(
 ) -> Result<StatusCode, ApiError> {
     let admin_id = require_admin(&state, &headers).await?;
     if input.new_password.len() < 12 {
-        return Err(ApiError::new(
-            StatusCode::BAD_REQUEST,
-            "password_too_short",
-        ));
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "password_too_short"));
     }
-    let row: Option<(String,)> = sqlx::query_as("select password_hash from admin_users where id = $1")
-        .bind(admin_id)
-        .fetch_optional(&state.pool)
-        .await
-        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    let row: Option<(String,)> =
+        sqlx::query_as("select password_hash from admin_users where id = $1")
+            .bind(admin_id)
+            .fetch_optional(&state.pool)
+            .await
+            .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
     let Some((password_hash,)) = row else {
         return Err(ApiError::new(StatusCode::UNAUTHORIZED, "invalid_token"));
     };
@@ -476,12 +600,13 @@ async fn disable_admin_totp(
     Json(input): Json<TotpDisableInput>,
 ) -> Result<StatusCode, ApiError> {
     let admin_id = require_admin(&state, &headers).await?;
-    let row: Option<(String, bool, Option<String>)> =
-        sqlx::query_as("select password_hash, totp_enabled, totp_secret from admin_users where id = $1")
-            .bind(admin_id)
-            .fetch_optional(&state.pool)
-            .await
-            .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    let row: Option<(String, bool, Option<String>)> = sqlx::query_as(
+        "select password_hash, totp_enabled, totp_secret from admin_users where id = $1",
+    )
+    .bind(admin_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
     let Some((password_hash, totp_enabled, totp_secret)) = row else {
         return Err(ApiError::new(StatusCode::UNAUTHORIZED, "invalid_token"));
     };
@@ -559,6 +684,142 @@ async fn delete_admin_post(
         return Err(ApiError::new(StatusCode::NOT_FOUND, "not_found"));
     }
     Ok(StatusCode::NO_CONTENT)
+}
+
+async fn published_post_id(pool: &PgPool, slug: &str) -> Result<Uuid, ApiError> {
+    let row: Option<(Uuid,)> = sqlx::query_as(
+        "select id from blog_posts where slug = $1 and status = 'published' limit 1",
+    )
+    .bind(slug)
+    .fetch_optional(pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    row.map(|item| item.0)
+        .ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "not_found"))
+}
+
+async fn load_blog_interactions(
+    pool: &PgPool,
+    post_id: Uuid,
+    anonymous_key: Option<&str>,
+) -> Result<BlogInteractionsOutput, ApiError> {
+    let comment_rows = sqlx::query_as::<_, BlogCommentRow>(
+        r#"
+        select id, display_name, body, created_at
+        from blog_comments
+        where post_id = $1 and status = 'published'
+        order by created_at asc
+        "#,
+    )
+    .bind(post_id)
+    .fetch_all(pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+
+    let counts: Vec<(String, i64)> = sqlx::query_as(
+        r#"
+        select reaction_type, count(*)::bigint
+        from blog_reactions
+        where post_id = $1
+        group by reaction_type
+        "#,
+    )
+    .bind(post_id)
+    .fetch_all(pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+
+    let reacted_types = if let Some(key) = anonymous_key.filter(|item| !item.trim().is_empty()) {
+        sqlx::query_as::<_, (String,)>(
+            "select reaction_type from blog_reactions where post_id = $1 and anonymous_key = $2",
+        )
+        .bind(post_id)
+        .bind(key.trim())
+        .fetch_all(pool)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?
+        .into_iter()
+        .map(|item| item.0)
+        .collect::<HashSet<_>>()
+    } else {
+        HashSet::new()
+    };
+
+    let reactions = reaction_types()
+        .into_iter()
+        .map(|reaction_type| {
+            let reaction_type = reaction_type.to_string();
+            let count = counts
+                .iter()
+                .find(|item| item.0 == reaction_type)
+                .map(|item| item.1)
+                .unwrap_or(0);
+            BlogReactionSummary {
+                reacted: reacted_types.contains(&reaction_type),
+                reaction_type,
+                count,
+            }
+        })
+        .collect();
+
+    Ok(BlogInteractionsOutput {
+        comments: comment_rows.into_iter().map(to_comment).collect(),
+        reactions,
+    })
+}
+
+fn to_comment(row: BlogCommentRow) -> BlogComment {
+    BlogComment {
+        id: row.id,
+        display_name: row.display_name,
+        body: row.body,
+        created_at: row.created_at.format("%Y-%m-%d %H:%M").to_string(),
+    }
+}
+
+fn clean_display_name(value: Option<&str>) -> Result<String, ApiError> {
+    let name = value.unwrap_or("").trim();
+    if name.chars().count() > 80 {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "display_name_too_long",
+        ));
+    }
+    Ok(if name.is_empty() {
+        "訪客".to_string()
+    } else {
+        name.to_string()
+    })
+}
+
+fn clean_comment_body(value: &str) -> Result<String, ApiError> {
+    let body = value.trim();
+    if body.is_empty() {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "comment_required"));
+    }
+    if body.chars().count() > 2_000 {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "comment_too_long"));
+    }
+    Ok(body.to_string())
+}
+
+fn clean_anonymous_key(value: &str) -> Result<String, ApiError> {
+    let key = value.trim();
+    if key.len() < 8 || key.len() > 120 {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "invalid_anonymous_key",
+        ));
+    }
+    Ok(key.to_string())
+}
+
+fn reaction_types() -> [&'static str; 4] {
+    ["like", "useful", "inspired", "thoughtful"]
+}
+
+fn is_reaction_type(value: &str) -> bool {
+    reaction_types().contains(&value)
 }
 
 async fn upload_media(
@@ -1003,6 +1264,39 @@ mod tests {
     }
 
     #[test]
+    fn normalizes_blank_comment_display_name() {
+        assert_eq!(clean_display_name(Some("   ")).unwrap(), "訪客");
+        assert_eq!(clean_display_name(Some("Cash")).unwrap(), "Cash");
+    }
+
+    #[test]
+    fn rejects_invalid_comment_input() {
+        let blank = clean_comment_body("   ").expect_err("blank comment should fail");
+        let long_name =
+            clean_display_name(Some(&"x".repeat(81))).expect_err("long display name should fail");
+        let long_body =
+            clean_comment_body(&"x".repeat(2_001)).expect_err("long comment should fail");
+
+        assert_eq!(blank.code, "comment_required");
+        assert_eq!(long_name.code, "display_name_too_long");
+        assert_eq!(long_body.code, "comment_too_long");
+    }
+
+    #[test]
+    fn validates_reaction_type_and_anonymous_key() {
+        assert!(is_reaction_type("like"));
+        assert!(is_reaction_type("useful"));
+        assert!(!is_reaction_type("angry"));
+        assert!(clean_anonymous_key("visitor-123").is_ok());
+        assert_eq!(
+            clean_anonymous_key("short")
+                .expect_err("short key should fail")
+                .code,
+            "invalid_anonymous_key"
+        );
+    }
+
+    #[test]
     fn password_hash_round_trip_verifies_original_password_only() {
         let hash = hash_password("correct horse battery staple").expect("hash password");
 
@@ -1024,6 +1318,9 @@ mod tests {
         let secret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
 
         assert_eq!(totp_code(secret, 59 / 30).as_deref(), Some("287082"));
-        assert_eq!(totp_code(secret, 1111111109 / 30).as_deref(), Some("081804"));
+        assert_eq!(
+            totp_code(secret, 1111111109 / 30).as_deref(),
+            Some("081804")
+        );
     }
 }

@@ -1,19 +1,24 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import './App.css'
 import { blogCategories, blogTags, publishedBlogPosts, searchBlogPosts, type BlogPost } from './blogData'
 import {
   adminLogin,
   changeAdminPassword,
+  createBlogComment,
+  createBlogReaction,
   deleteAdminPost,
   disableAdminTotp,
   enableAdminTotp,
+  fetchBlogInteractions,
   fetchAdminPosts,
   fetchAdminSecurity,
   fetchPublishedPosts,
   saveAdminPost,
   setupAdminTotp,
   type AdminSecurity,
+  type BlogInteractions,
   type BlogPostPayload,
+  type BlogReactionType,
   type TotpSetup,
 } from './blogApi'
 import { blocksToMarkdown, estimateReadMinutes, markdownToBlocks } from './blogEditor'
@@ -22,6 +27,17 @@ import { problemNumberFor, searchTutorials } from './search'
 
 const primaryTags = ['All', 'Array', 'String', 'Linked List', 'Tree', 'Graph', 'DP', 'Matrix', 'Heap', 'Trie', 'Stack', 'Interval']
 const solutionLabels: Record<SolutionLanguage, string> = { cpp: 'C++', java: 'Java', js: 'JS' }
+const reactionLabels: Record<BlogReactionType, string> = {
+  like: '喜歡',
+  useful: '有用',
+  inspired: '有啟發',
+  thoughtful: '值得想',
+}
+const reactionTypes = Object.keys(reactionLabels) as BlogReactionType[]
+const emptyInteractions: BlogInteractions = {
+  comments: [],
+  reactions: reactionTypes.map(reactionType => ({ reactionType, count: 0, reacted: false })),
+}
 type SiteSection = 'home' | 'games' | 'strategies' | 'helios' | 'learning' | 'exam' | 'algoLab' | 'easyDb' | 'blog'
 
 const siteSections: Array<{ id: SiteSection; label: string; eyebrow: string; title: string; summary: string; status: string }> = [
@@ -68,6 +84,15 @@ const quantPanels = [
     text: '更多內容會在整理後公開。',
   },
 ]
+
+function blogAnonymousKey() {
+  const storageKey = 'exactlyone_blog_visitor'
+  const existing = localStorage.getItem(storageKey)
+  if (existing) return existing
+  const next = globalThis.crypto?.randomUUID?.() ?? `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  localStorage.setItem(storageKey, next)
+  return next
+}
 
 function ProjectHub({ onSelect }: { onSelect: (section: SiteSection) => void }) {
   const directorySections = siteSections.filter(item => item.id !== 'blog')
@@ -172,6 +197,13 @@ function BlogSection() {
   const [activeCategory, setActiveCategory] = useState('All')
   const [blogQuery, setBlogQuery] = useState('')
   const [loadingPosts, setLoadingPosts] = useState(true)
+  const [anonymousKey] = useState(blogAnonymousKey)
+  const [interactions, setInteractions] = useState<BlogInteractions>(emptyInteractions)
+  const [commentName, setCommentName] = useState('')
+  const [commentBody, setCommentBody] = useState('')
+  const [submittingComment, setSubmittingComment] = useState(false)
+  const [submittingReaction, setSubmittingReaction] = useState<BlogReactionType | null>(null)
+  const [interactionMessage, setInteractionMessage] = useState('')
   const categories = ['All', ...blogCategories(posts)]
   const tags = ['All', ...blogTags(posts)]
   const visiblePosts = useMemo(() => {
@@ -182,6 +214,7 @@ function BlogSection() {
     return searchBlogPosts(tagPosts, blogQuery)
   }, [activeCategory, activeTag, blogQuery, posts])
   const selectedPost = visiblePosts.find(post => post.id === selectedPostId) ?? visiblePosts[0]
+  const selectedPostSlug = selectedPost?.slug ?? ''
   const hasPublishedPosts = posts.length > 0
   const isFiltered = activeTag !== 'All' || activeCategory !== 'All' || blogQuery.trim().length > 0
 
@@ -196,6 +229,21 @@ function BlogSection() {
     return () => { alive = false }
   }, [])
 
+  useEffect(() => {
+    if (!selectedPostSlug) {
+      return
+    }
+    let alive = true
+    fetchBlogInteractions(selectedPostSlug, anonymousKey)
+      .then(nextInteractions => {
+        if (alive) setInteractions(nextInteractions)
+      })
+      .catch(() => {
+        if (alive) setInteractions(emptyInteractions)
+      })
+    return () => { alive = false }
+  }, [anonymousKey, selectedPostSlug])
+
   const chooseTag = (tag: string) => {
     setActiveTag(tag)
     setSelectedPostId('')
@@ -204,6 +252,38 @@ function BlogSection() {
   const chooseCategory = (category: string) => {
     setActiveCategory(category)
     setSelectedPostId('')
+  }
+
+  const submitComment = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!selectedPostSlug || !commentBody.trim()) return
+    setSubmittingComment(true)
+    setInteractionMessage('')
+    try {
+      await createBlogComment(selectedPostSlug, commentName, commentBody)
+      const nextInteractions = await fetchBlogInteractions(selectedPostSlug, anonymousKey)
+      setInteractions(nextInteractions)
+      setCommentBody('')
+      setInteractionMessage('留言已送出')
+    } catch {
+      setInteractionMessage('留言送出失敗，請稍後再試')
+    } finally {
+      setSubmittingComment(false)
+    }
+  }
+
+  const chooseReaction = async (reactionType: BlogReactionType) => {
+    if (!selectedPostSlug || submittingReaction) return
+    setSubmittingReaction(reactionType)
+    setInteractionMessage('')
+    try {
+      const nextInteractions = await createBlogReaction(selectedPostSlug, reactionType, anonymousKey)
+      setInteractions(nextInteractions)
+    } catch {
+      setInteractionMessage('反應送出失敗，請稍後再試')
+    } finally {
+      setSubmittingReaction(null)
+    }
   }
 
   return <section className="blog-shell">
@@ -247,6 +327,18 @@ function BlogSection() {
       <div className="blog-tags">{selectedPost.tags.map(tag => <span key={tag}>{tag}</span>)}</div>
       <BlogToc post={selectedPost} />
       <BlogBody post={selectedPost} />
+      <BlogInteractionsPanel
+        interactions={interactions}
+        commentName={commentName}
+        commentBody={commentBody}
+        message={interactionMessage}
+        submittingComment={submittingComment}
+        submittingReaction={submittingReaction}
+        onCommentNameChange={setCommentName}
+        onCommentBodyChange={setCommentBody}
+        onSubmitComment={submitComment}
+        onReact={chooseReaction}
+      />
     </article> : <article className="blog-post empty-post"><p className="eyebrow">NO POSTS</p><h2>{isFiltered ? '沒有符合條件的文章' : '尚未公開文章'}</h2><p className="blog-excerpt">{isFiltered ? '調整搜尋、分類或標籤後再看看。' : '這裡只會顯示已確認可以公開的內容。'}</p></article>}
   </section>
 }
@@ -517,6 +609,68 @@ function BlogBody({ post }: { post: BlogPost }) {
       return <p key={index}>{renderInlineMarkdown(block.text)}</p>
     })}
   </div>
+}
+
+function BlogInteractionsPanel({
+  interactions,
+  commentName,
+  commentBody,
+  message,
+  submittingComment,
+  submittingReaction,
+  onCommentNameChange,
+  onCommentBodyChange,
+  onSubmitComment,
+  onReact,
+}: {
+  interactions: BlogInteractions
+  commentName: string
+  commentBody: string
+  message: string
+  submittingComment: boolean
+  submittingReaction: BlogReactionType | null
+  onCommentNameChange: (value: string) => void
+  onCommentBodyChange: (value: string) => void
+  onSubmitComment: (event: FormEvent) => void
+  onReact: (reactionType: BlogReactionType) => void
+}) {
+  return <section className="blog-interactions">
+    <div className="reaction-row" aria-label="文章反應">
+      {reactionTypes.map(reactionType => {
+        const reaction = interactions.reactions.find(item => item.reactionType === reactionType)
+        const busy = submittingReaction === reactionType
+        return <button
+          key={reactionType}
+          className={reaction?.reacted ? 'active' : ''}
+          onClick={() => onReact(reactionType)}
+          disabled={busy}
+        >
+          <span>{reactionLabels[reactionType]}</span>
+          <b>{reaction?.count ?? 0}</b>
+        </button>
+      })}
+    </div>
+    <div className="comment-section">
+      <div className="comment-head">
+        <h3>留言</h3>
+        <span>{interactions.comments.length} 則</span>
+      </div>
+      <form className="comment-form" onSubmit={onSubmitComment}>
+        <input value={commentName} onChange={event => onCommentNameChange(event.target.value)} placeholder="暱稱，可留空" maxLength={80} />
+        <textarea value={commentBody} onChange={event => onCommentBodyChange(event.target.value)} placeholder="寫下你的想法" maxLength={2000} />
+        <div className="comment-actions">
+          {message && <span>{message}</span>}
+          <button className="primary" disabled={submittingComment || !commentBody.trim()}>{submittingComment ? '送出中' : '送出留言'}</button>
+        </div>
+      </form>
+      <div className="comment-list">
+        {interactions.comments.length > 0 ? interactions.comments.map(comment => <article key={comment.id}>
+          <div><b>{comment.displayName}</b><span>{comment.createdAt}</span></div>
+          <p>{comment.body}</p>
+        </article>) : <p className="comment-empty">還沒有留言。</p>}
+      </div>
+    </div>
+  </section>
 }
 
 function renderInlineMarkdown(text: string) {

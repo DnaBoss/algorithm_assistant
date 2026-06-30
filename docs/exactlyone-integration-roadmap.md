@@ -82,12 +82,17 @@ Already started in this repo:
 - PostgreSQL migration.
 - Backup script.
 
+Current security and interaction state:
+
+- Password change exists.
+- Optional TOTP for owner login exists.
+- Comment and reaction tables exist.
+- Public comment and reaction APIs exist for published posts.
+
 Next requirements:
 
-- Password change.
-- Optional TOTP for owner login.
-- Comment and reaction model.
-- Public-safe moderation states.
+- Public-safe moderation tools.
+- Rate limiting / abuse controls.
 - Better Markdown rendering and image handling.
 
 ### Algo Lab
@@ -188,9 +193,8 @@ Status: partially implemented.
 
 - Owner password change API and admin UI exist.
 - Optional TOTP setup, enable, disable, and login verification exist.
-- Public comments.
-- Reactions.
-- Moderation and rate-limiting boundary.
+- Public comments and reactions exist for published blog posts.
+- Moderation and rate-limiting boundary remains.
 
 ### M3: Algo Lab Integration
 
@@ -230,12 +234,13 @@ Status: partially designed.
 
 ## Next Action Queue
 
-1. Add owner password change and TOTP plan to backend tasks.
-2. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
+1. Add moderation tools and rate limiting for public Blog interactions.
+2. Add personal notes and interaction reuse for Algo Lab problems.
+3. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
    reimplementation.
-3. Add Helios read-only status proof before live operations.
-4. Decide whether this verified Blog-first shell should deploy before the next
-   backend security slice.
+4. Add Helios read-only status proof before live operations.
+5. Decide whether this verified platform slice should deploy before the next
+   integration slice.
 
 ## Progress Log
 
@@ -243,7 +248,7 @@ Status: partially designed.
 
 - Preserved the existing ExactlyOne blog-platform work under
   `feature/exactlyone-platform-integration`.
-- Removed the old assistant-prefixed remote branch and continued work on
+- Removed the old temporary remote branch and continued work on
   `feature/exactlyone-platform-integration`.
 - Added this integration roadmap for Helios, Algo Lab, Blog, and Easy DB.
 - Added public Helios and Easy DB section labels.
@@ -258,7 +263,7 @@ Status: partially designed.
 - Completed headless Chrome verification for the Blog-first home page:
   `個人 blog` is the home hero, the blog surface renders before the section
   cards, and Helios, Algo Lab, and Easy DB appear as major entry cards without
-  page-level horizontal scrolling.
+  horizontal overflow.
 - Completed headless Chrome verification for Algo Lab complete solutions:
   expanding the solution keeps it outside the right-side state panel, renders it
   under the lesson content, uses `pre-wrap`, and does not create page-level
@@ -267,6 +272,9 @@ Status: partially designed.
   TOTP login verification, TOTP enable/disable endpoints, admin UI controls,
   and database migration `002_admin_security.sql`.
 - Added blog editor support for inline Markdown links and video blocks.
+- Added public blog comments and reactions with PostgreSQL migration
+  `003_blog_interactions.sql`, published-post-only API routes, and article-page
+  UI.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

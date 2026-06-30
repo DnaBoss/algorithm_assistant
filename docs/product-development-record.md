@@ -52,9 +52,11 @@ This file is a public-safe product record.
 - Added owner security foundation: password change plus optional TOTP setup and
   login verification.
 - Added richer blog editor content support for inline links and video blocks.
+- Added the first public community layer for Blog posts: anonymous comments and
+  browser-local reaction deduplication for published articles.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
-- Removed the old assistant-prefixed remote branch and continued branch hygiene
+- Removed the old temporary remote branch and continued branch hygiene
   with `feature/...`, `fix/...`, and `docs/...` naming.
 
 ## Active Long Task

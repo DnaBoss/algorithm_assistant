@@ -20,6 +20,12 @@ The public site reads published posts from `/api/blog/posts`. If the API is not
 available during frontend-only development, the site falls back to the static
 published post list.
 
+Public article interactions use:
+
+- `GET /api/blog/posts/:slug/interactions`
+- `POST /api/blog/posts/:slug/comments`
+- `POST /api/blog/posts/:slug/reactions`
+
 The Vite dev server proxies `/api` and `/media` to the local API on port `4174`.
 
 ## Admin
@@ -70,8 +76,12 @@ Video block syntax:
   Markdown or another editor format.
 - Only posts with `status = 'published'` are returned by public APIs.
 - Drafts are only available through authenticated admin APIs.
+- Comments and reactions are only accepted for published posts.
+- Reactions are deduplicated by post, reaction type, and browser-local visitor
+  key.
 - API validation rejects blank titles, blank categories, invalid status values,
-  non-positive read minutes, and empty bodies.
+  non-positive read minutes, empty bodies, invalid comments, and unknown
+  reaction types.
 
 ## Media
 
@@ -96,6 +106,6 @@ npm run test
 ```
 
 Current automated coverage includes frontend Markdown/block mapping tests,
-video-block parsing tests, Rust API validation/password tests, and TOTP
-generator tests. Add repository and API integration tests as database behavior
-grows.
+video-block parsing tests, Rust API validation/password tests, comment/reaction
+input validation tests, and TOTP generator tests. Add repository and API
+integration tests as database behavior grows.

@@ -23,6 +23,26 @@ export type TotpSetup = {
   otpauthUrl: string
 }
 
+export type BlogComment = {
+  id: string
+  displayName: string
+  body: string
+  createdAt: string
+}
+
+export type BlogReactionType = 'like' | 'useful' | 'inspired' | 'thoughtful'
+
+export type BlogReactionSummary = {
+  reactionType: BlogReactionType
+  count: number
+  reacted: boolean
+}
+
+export type BlogInteractions = {
+  comments: BlogComment[]
+  reactions: BlogReactionSummary[]
+}
+
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...init,
@@ -44,6 +64,25 @@ export async function fetchPublishedPosts() {
   } catch {
     return publishedBlogPosts
   }
+}
+
+export async function fetchBlogInteractions(slug: string, anonymousKey: string) {
+  const params = new URLSearchParams({ anonymousKey })
+  return requestJson<BlogInteractions>(`/api/blog/posts/${encodeURIComponent(slug)}/interactions?${params}`)
+}
+
+export async function createBlogComment(slug: string, displayName: string, body: string) {
+  return requestJson<BlogInteractions>(`/api/blog/posts/${encodeURIComponent(slug)}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ displayName, body }),
+  })
+}
+
+export async function createBlogReaction(slug: string, reactionType: BlogReactionType, anonymousKey: string) {
+  return requestJson<BlogInteractions>(`/api/blog/posts/${encodeURIComponent(slug)}/reactions`, {
+    method: 'POST',
+    body: JSON.stringify({ reactionType, anonymousKey }),
+  })
 }
 
 export async function adminLogin(email: string, password: string, totpCode?: string) {
