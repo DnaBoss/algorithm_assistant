@@ -15,6 +15,11 @@ describe('platform progress data', () => {
     expect(areaCompletionCount()).toBeGreaterThanOrEqual(12)
   })
 
+  it('records Algo Lab track and rating progress as completed slices', () => {
+    const algoLab = corePlatformAreas.find(area => area.id === 'algoLab')
+    expect(algoLab?.completed).toEqual(expect.arrayContaining(['Track hierarchy', 'Rating selection']))
+  })
+
   it('keeps production release cadence explicit', () => {
     expect(releaseRhythm.status).toBe('batch verified slices')
     expect(releaseRhythm.summary).toContain('coherent feature slices')

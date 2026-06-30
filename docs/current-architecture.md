@@ -66,6 +66,8 @@ Public architecture snapshot for the ExactlyOne website.
 - Easy DB public schema-browser surface with sanitized example tables, column
   search, relationship hints, workflow notes, and private-operation boundary.
 - Algo Lab search and filtering.
+- Algo Lab track hierarchy with Blind 75, Top 150, rating-based practice,
+  category index, and multi-tag index pages.
 - Tutorial selection by problem title, number, and tags.
 - Whiteboard-style dry-run steps.
 - Current variable state.

@@ -67,6 +67,8 @@ This file is a public-safe product record.
 - Added `npm run release:gate` as the pre-deploy gate for branch hygiene,
   public-file leak scanning, backup-helper presence, lint, tests, frontend
   build, and API check.
+- Added Algo Lab track hierarchy pages for Blind 75, Top 150, rating-based
+  practice, category index, and multi-tag index.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

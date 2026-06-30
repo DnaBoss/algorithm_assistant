@@ -26,8 +26,8 @@ export const corePlatformAreas: PlatformProgress[] = [
     title: 'Algo Lab',
     status: 'learning surface',
     publicSurface: 'Algorithm notes, dry-runs, complete solutions, and per-problem discussion.',
-    completed: ['Searchable tutorials', 'Personal notes', 'C++ / Java / JS solutions'],
-    next: 'Track hierarchy, rank-point selection, moderation, and rate limits.',
+    completed: ['Searchable tutorials', 'Track hierarchy', 'Rating selection', 'Personal notes'],
+    next: 'Moderation, rate limits, and deeper per-track study plans.',
   },
   {
     id: 'helios',

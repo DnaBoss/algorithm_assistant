@@ -10,6 +10,7 @@
     "db:seed-admin": "cargo run --manifest-path server/Cargo.toml -- seed-admin",
     "build": "tsc -b && vite build",
     "build:api": "cargo check --manifest-path server/Cargo.toml",
+    "check:tracks": "node scripts/check-track-pages.mjs",
     "release:gate": "bash scripts/release-gate.sh",
     "test": "npm run test:frontend && npm run test:api",
     "test:frontend": "vitest run",

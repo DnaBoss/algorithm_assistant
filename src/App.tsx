@@ -29,6 +29,8 @@ import {
   type BlogReactionType,
   type TotpSetup,
 } from './blogApi'
+import { algoTracks, categorySummaries, loadRatedPracticeProblems, multiTagSummaries, tutorialsForTrack, type AlgoTrackId } from './algoTracksData'
+import type { ProblemBankItem } from './problemBank'
 import { blocksToMarkdown, estimateReadMinutes, markdownToBlocks } from './blogEditor'
 import { easyDbCapabilities, easyDbExampleSchema, easyDbWorkflow, filterEasyDbTables } from './easyDbData'
 import { heliosMetrics, heliosPipeline, heliosQualityRules, heliosResearchLanes } from './heliosData'
@@ -1055,6 +1057,8 @@ function App() {
   const [submittingAlgoComment, setSubmittingAlgoComment] = useState(false)
   const [submittingAlgoReaction, setSubmittingAlgoReaction] = useState<BlogReactionType | null>(null)
   const [algoInteractionMessage, setAlgoInteractionMessage] = useState('')
+  const [activeTrack, setActiveTrack] = useState<AlgoTrackId | null>(null)
+  const [ratedProblems, setRatedProblems] = useState<ProblemBankItem[]>([])
 
   const allTags = useMemo(() => ['All', ...Array.from(new Set(tutorials.flatMap(t => t.tags))).sort()], [])
   const visibleTags = showAllTags ? allTags : primaryTags.filter(t => allTags.includes(t))
@@ -1079,7 +1083,20 @@ function App() {
     return () => { alive = false }
   }, [anonymousKey, tutorial.id])
 
+  useEffect(() => {
+    if (activeTrack !== 'rating') return
+    let alive = true
+    loadRatedPracticeProblems().then(output => {
+      if (alive) setRatedProblems(output)
+    }).catch(() => {
+      if (alive) setRatedProblems([])
+    })
+    return () => { alive = false }
+  }, [activeTrack])
+
   const choose = (id: string) => { setSelectedId(id); setStepIndex(0); setSolutionOpen(false) }
+  const openTrack = (trackId: AlgoTrackId) => { setActiveTrack(trackId); setSolutionOpen(false) }
+  const openLessonFromTrack = (id: string) => { setActiveTrack(null); choose(id) }
   const chooseTag = (nextTag: string) => {
     const nextFiltered = nextTag === 'All' ? searchTutorials(tutorials, query) : searchTutorials(tutorials, query).filter(t => t.tags.includes(nextTag))
     setTag(nextTag)
@@ -1135,8 +1152,67 @@ function App() {
     if (section === 'blog') return <BlogSection />
     if (section === 'easyDb') return <EasyDbSection />
     if (section !== 'algoLab') return <ProjectPlaceholder section={section} />
+    const track = activeTrack ? algoTracks.find(item => item.id === activeTrack) : null
+    if (track) {
+      const trackTutorials = tutorialsForTrack(track.id, tutorials)
+      const categories = track.id === 'categories' ? categorySummaries(tutorials).slice(0, 24) : []
+      const multiTags = track.id === 'multi-tags' ? multiTagSummaries(tutorials) : []
+
+      return <>
+        <section className="hero compact"><div className="hero-bg" /><p className="eyebrow">ALGO LAB</p><h1>{track.title}</h1><p className="lead">{track.summary}</p></section>
+        <section className="track-page" data-testid="track-page">
+          <button className="back-btn" data-testid="track-back" onClick={() => setActiveTrack(null)}>← 回題組入口</button>
+          <p className="eyebrow">{track.label}</p>
+          <h2>{track.title}</h2>
+          <p>{track.summary}</p>
+          {(track.id === 'blind75' || track.id === 'top150') && <div className="track-lessons">
+            {trackTutorials.map(item => <button key={item.id} onClick={() => openLessonFromTrack(item.id)}>
+              <span>#{problemNumberFor(item.id) ?? '—'} · {item.difficulty}</span>
+              <b>{item.title}</b>
+              <small>{item.group} · {item.summary}</small>
+            </button>)}
+          </div>}
+          {track.id === 'rating' && <div className="track-lessons rating-lessons">
+            {ratedProblems.map(item => {
+              const linkedTutorial = tutorials.find(t => String(problemNumberFor(t.id)) === item.id)
+              return <button key={item.id} onClick={() => linkedTutorial && openLessonFromTrack(linkedTutorial.id)} disabled={!linkedTutorial}>
+                <span>#{item.id} · rating {item.rating ?? '—'} · {item.difficulty}</span>
+                <b>{item.title}</b>
+                <small>{linkedTutorial ? '已收錄教學，可直接進入。' : '尚未收錄教學，先列入選題清單。'}</small>
+              </button>
+            })}
+          </div>}
+          {track.id === 'categories' && <div className="category-grid">
+            {categories.map(item => <button key={item.label} onClick={() => { setActiveTrack(null); chooseTag(item.label) }}>
+              <b>{item.label}</b>
+              <span>{item.count} tutorials</span>
+            </button>)}
+          </div>}
+          {track.id === 'multi-tags' && <div className="category-grid tag-index">
+            {multiTags.map(item => <button key={item.label}>
+              <b>{item.label}</b>
+              <span>{item.count} tutorials</span>
+            </button>)}
+          </div>}
+        </section>
+      </>
+    }
+
     return <>
-      <section className="hero compact"><div className="hero-bg" /><p className="eyebrow">ALGO LAB</p><h1>先找題，再進 dry-run</h1><p className="lead">用題號、題名或分類進入教學；首頁只放能操作的入口。</p><div className="hero-actions"><a className="btn primary" href="#tutorials">搜尋題目</a></div></section>
+      <section className="hero compact"><div className="hero-bg" /><p className="eyebrow">ALGO LAB</p><h1>先找題，再進 dry-run</h1><p className="lead">用題號、題名或分類進入教學；首頁只放能操作的入口。</p><div className="hero-actions"><a className="btn primary" href="#tutorials">搜尋題目</a><a className="btn secondary" href="#tracks">題組入口</a></div></section>
+
+      <section id="tracks" className="tracks">
+        <p className="eyebrow">TRACKS</p>
+        <h2>題組入口</h2>
+        <div className="track-grid">
+          {algoTracks.map(track => <button key={track.id} data-track-id={track.id} className="track-card" onClick={() => openTrack(track.id)}>
+            <span>{track.label}</span>
+            <h3>{track.title}</h3>
+            <p>{track.summary}</p>
+            <b>進入題組 →</b>
+          </button>)}
+        </div>
+      </section>
 
       <section id="tutorials" className="layout"><aside className="sidebar"><div className="sidebar-head"><div><h2>題目索引</h2><p>可用 LeetCode 題號或題名 fuzzy search</p></div><button className="tag-toggle" onClick={() => setShowAllTags(!showAllTags)}>{showAllTags ? '收合標籤' : `更多標籤 (${allTags.length - primaryTags.length})`}</button></div><label className="search-box"><span>搜尋題目</span><input value={query} onChange={e => changeQuery(e.target.value)} placeholder="例：1、146、coin chnage、valid bst" /></label><div className="active-filter">目前：<b>{tag}</b> · {filtered.length} 題{query && <em> · 搜尋「{query}」</em>}</div><div className="filter">{visibleTags.map(t => <button key={t} onClick={() => chooseTag(t)} className={tag === t ? 'selected' : ''}>{t}</button>)}</div><div className="cards">{filtered.map(t => <button key={t.id} onClick={() => choose(t.id)} className={'problem-card ' + (t.id === tutorial.id ? 'active' : '')}><span>#{problemNumberFor(t.id) ?? '—'} · {t.group}</span><b>{t.title}</b><small>{t.summary}</small></button>)}</div></aside>
       <article className="lesson"><div className="lesson-head"><div><p className="eyebrow">{tutorial.group} • {tutorial.difficulty}</p><h2>{tutorial.title}</h2><p>{tutorial.summary}</p></div><Tags tags={tutorial.tags} /></div>

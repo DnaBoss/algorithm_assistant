@@ -100,6 +100,8 @@ Next requirements:
 Current state:
 
 - Searchable tutorials.
+- Track hierarchy exists for Blind 75, Top 150, rating-based practice,
+  category index, and multi-tag index pages.
 - Dry-run steps.
 - Variable state and timeline.
 - Full-width complete solutions.
@@ -111,8 +113,7 @@ Current state:
 
 Next requirements:
 
-- Track hierarchy such as `Algo > Blind 75`, `Algo > Top 150`, and
-  rank-point-based selection.
+- Deeper per-track study plans, progress markers, and recommended order.
 - Moderation and rate limiting for problem comments/reactions.
 
 ### Helios
@@ -211,13 +212,15 @@ Status: partially implemented.
 Status: partially implemented.
 
 - Existing Algo Lab is present.
+- Track hierarchy exists for Blind 75, Top 150, rating-based practice,
+  category index, and multi-tag index pages.
 - Complete solutions now render as an independent full-width section.
 - Personal notes, public comments, and reactions have database/API foundations.
 - Public Algo lesson pages render the personal-note surface and interaction UI.
 - Admin page includes a first problem-note editor with title, status, Markdown
   body, preview, save, and delete.
 - Browser screenshot review passed for the expanded complete-solution layout.
-- Needs moderation, rate limiting, and track hierarchy.
+- Needs moderation, rate limiting, and deeper per-track study plans.
 
 ### M4: Easy DB Integration
 
@@ -314,6 +317,8 @@ Status: partially implemented.
 - Added `npm run release:gate` as the pre-deploy gate for branch hygiene,
   public-file leak scanning, backup-helper presence, lint, tests, frontend
   build, and API check.
+- Added Algo Lab track hierarchy pages for Blind 75, Top 150, rating-based
+  practice, category index, and multi-tag index.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

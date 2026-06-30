@@ -25,6 +25,9 @@ fi
 echo "==> npm run lint"
 npm run lint
 
+echo "==> npm run check:tracks"
+npm run check:tracks
+
 echo "==> npm run test"
 npm run test
 
