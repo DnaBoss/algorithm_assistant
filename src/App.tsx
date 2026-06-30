@@ -32,6 +32,7 @@ import {
 import { blocksToMarkdown, estimateReadMinutes, markdownToBlocks } from './blogEditor'
 import { easyDbCapabilities, easyDbExampleSchema, easyDbWorkflow, filterEasyDbTables } from './easyDbData'
 import { heliosMetrics, heliosPipeline, heliosQualityRules, heliosResearchLanes } from './heliosData'
+import { areaCompletionCount, corePlatformAreas, releaseRhythm, type PlatformAreaId } from './platformProgressData'
 import { tutorials, type SolutionLanguage, type Step, type Tutorial } from './tutorialData'
 import { problemNumberFor, searchTutorials } from './search'
 
@@ -72,6 +73,7 @@ function blogAnonymousKey() {
 
 function ProjectHub({ onSelect }: { onSelect: (section: SiteSection) => void }) {
   const directorySections = siteSections.filter(item => item.id !== 'blog')
+  const openArea = (id: PlatformAreaId) => onSelect(id)
 
   return <>
     <section className="hero compact hub-hero">
@@ -86,6 +88,40 @@ function ProjectHub({ onSelect }: { onSelect: (section: SiteSection) => void }) 
     </section>
 
     <BlogSection />
+
+    <section className="platform-progress" aria-label="ExactlyOne platform progress">
+      <div className="progress-head">
+        <div>
+          <p className="eyebrow">PLATFORM</p>
+          <h2>整合進度</h2>
+        </div>
+        <div className="release-card">
+          <span>{releaseRhythm.title}</span>
+          <b>{releaseRhythm.status}</b>
+          <p>{releaseRhythm.summary}</p>
+        </div>
+      </div>
+      <div className="progress-metrics">
+        <div><b>{corePlatformAreas.length}</b><span>core areas</span></div>
+        <div><b>{areaCompletionCount()}</b><span>completed slices</span></div>
+        <div><b>1</b><span>public domain</span></div>
+      </div>
+      <div className="progress-grid">
+        {corePlatformAreas.map(area => <article key={area.id} className="progress-card">
+          <div className="progress-card-head">
+            <span>{area.eyebrow}</span>
+            <b>{area.status}</b>
+          </div>
+          <h3>{area.title}</h3>
+          <p>{area.publicSurface}</p>
+          <div className="progress-done">
+            {area.completed.map(item => <em key={item}>{item}</em>)}
+          </div>
+          <div className="progress-next"><span>next</span><strong>{area.next}</strong></div>
+          <button onClick={() => openArea(area.id)}>開啟</button>
+        </article>)}
+      </div>
+    </section>
 
     <section className="project-hub" aria-label="ExactlyOne sections">
       <div className="hub-head">

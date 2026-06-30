@@ -62,6 +62,8 @@ This file is a public-safe product record.
   boundaries.
 - Reworked Helios into a public read-only research/status section with metrics,
   research lanes, data pipeline stages, and private-operation boundaries.
+- Added a homepage platform progress surface for Blog, Algo Lab, Helios, and
+  Easy DB, including completed slices, next steps, and release cadence.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

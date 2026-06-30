@@ -178,6 +178,7 @@ Status: in progress.
 - Keep this roadmap updated.
 - Keep current architecture updated.
 - Keep product development record updated.
+- Keep the homepage platform progress surface aligned with the actual roadmap.
 - Preserve branch naming hygiene.
 
 ### M1: Blog-First ExactlyOne Shell
@@ -186,6 +187,8 @@ Status: partially implemented on `feature/exactlyone-platform-integration`.
 
 - Home is now Blog-first and keeps major section entry cards below the blog
   surface.
+- Home now includes a platform progress surface for Blog, Algo Lab, Helios, and
+  Easy DB, plus the current release cadence.
 - Blog public surface exists.
 - Admin editor exists.
 - Rust API exists.
@@ -303,6 +306,8 @@ Status: partially designed.
 - Reworked Helios from a placeholder into a public read-only research/status
   page with data quality gates, pipeline stages, and private-operation
   boundaries.
+- Added a homepage platform progress surface that keeps the four core
+  integration areas and release cadence visible from one place.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

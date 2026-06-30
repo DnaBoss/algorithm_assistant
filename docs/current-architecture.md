@@ -19,6 +19,8 @@ Public architecture snapshot for the ExactlyOne website.
   section shells, blog read surface, Helios surface, Easy DB / Easy PG surface,
   Algo Lab tutorial list, dry-run view, and solution panel.
 - `src/blogData.ts`: public blog post data model and published post list.
+- `src/platformProgressData.ts`: homepage progress model for the four core
+  ExactlyOne integration areas and production release cadence.
 - `src/tutorialData.ts`: tutorial definitions, tutorial content, solutions,
   idea explanations, complexity text.
 - `src/problemBank.ts`: problem catalog data.
@@ -54,6 +56,8 @@ Public architecture snapshot for the ExactlyOne website.
 ## Public Surface
 
 - ExactlyOne Blog-first home page with major public section entry cards.
+- Homepage platform progress surface covering Blog, Algo Lab, Helios, and Easy
+  DB, including completed slices, next steps, and release cadence.
 - Public Helios research/status section with read-only metrics, research lanes,
   data pipeline stages, research gates, and private-operation boundary copy.
 - Public Easy DB section shell with Easy PG as the PostgreSQL-focused tool.
