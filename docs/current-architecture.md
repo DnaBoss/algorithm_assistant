@@ -46,6 +46,8 @@ Public architecture snapshot for the ExactlyOne website.
   scan, backup-helper presence, lint, tests, frontend build, and API check.
 - `scripts/check-integration-tracking.mjs`: verifies the core tracking docs and
   package scripts continue to cover Blog, Algo Lab, Helios, and Easy DB.
+- `scripts/status-source-repos.mjs`: summarizes local Helios and Easy PG source
+  repo readiness without making the production build depend on private repos.
 - `scripts/import-platform-exports.mjs`: validates and normalizes Helios/Easy
   DB public export bundles before they are committed to the frontend.
 - `scripts/review-platform-export.mjs`: validates a local candidate bundle,
@@ -158,4 +160,6 @@ Public architecture snapshot for the ExactlyOne website.
 
 External source repos are not automatically part of the production build. Add an
 adapter, export, or copied module only after defining the public/private
-boundary in `docs/exactlyone-integration-roadmap.md`.
+boundary in `docs/exactlyone-integration-roadmap.md`. Use
+`npm run status:source-repos` locally before source-derived imports to confirm
+the expected source folders and entry files are present.

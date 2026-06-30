@@ -34,6 +34,9 @@ npm run check:tracks
 echo "==> npm run check:integration-tracking"
 npm run check:integration-tracking
 
+echo "==> npm run check:source-repos"
+npm run check:source-repos
+
 echo "==> npm run test"
 npm run test
 

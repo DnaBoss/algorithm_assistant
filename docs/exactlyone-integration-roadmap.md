@@ -212,6 +212,8 @@ Status: in progress.
 - Preserve branch naming hygiene.
 - Keep `npm run check:integration-tracking` passing so the tracking docs keep
   covering Blog, Algo Lab, Helios, and Easy DB.
+- Use `npm run status:source-repos` locally before source-derived imports to
+  confirm Helios and Easy PG source readiness.
 
 ### M1: Blog-First ExactlyOne Shell
 
@@ -264,6 +266,8 @@ Status: partially implemented.
 - Safe public/private boundary is represented in the UI.
 - Source Easy PG capabilities were reviewed: profiles, SSH tunnel, schema
   snapshot, column search, SQL import, and schema export.
+- Local Easy PG source readiness can be summarized with
+  `npm run status:source-repos`.
 - Public Easy DB schema export contract exists and feeds the schema browser.
 - Generated platform export bundle exists and is validated by release gate.
 - Easy PG schema-to-platform sanitizer exists with allow-list protection.
@@ -288,6 +292,8 @@ Status: partially implemented.
 - Public Helios research/status section exists with read-only metrics,
   research lanes, pipeline stages, research gates, and private-operation
   boundaries.
+- Local Helios source readiness can be summarized with
+  `npm run status:source-repos`.
 - Public Helios status export contract exists and feeds the status cards.
 - Generated platform export bundle exists and is validated by release gate.
 - Helios status-to-platform sanitizer exists.
@@ -311,8 +317,8 @@ Status: partially implemented.
 - Current branch includes Cloud Run artifacts.
 - `npm run release:gate` exists and verifies branch hygiene, public-file leak
   candidates, backup-helper presence, platform exports, track pages, integration
-  tracking docs, lint, tests, frontend build, and API check before any manual
-  deploy.
+  tracking docs, source-repo status tooling, lint, tests, frontend build, and
+  API check before any manual deploy.
 - Need decide whether production stays on VM/Nginx for now or moves to Cloud
   Run.
 - Need restore drill before storing important production content.
@@ -403,6 +409,8 @@ Status: partially implemented.
   and the latest warning count.
 - Added an integration tracking gate so roadmap, architecture, product record,
   export contracts, and package scripts stay aligned with the four core areas.
+- Added local Helios/Easy PG source repo readiness status tooling, with release
+  gate self-test coverage that does not require private repos in CI.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

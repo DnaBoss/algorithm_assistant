@@ -92,6 +92,8 @@ This file is a public-safe product record.
 - Added a local status command for summarizing platform export review history.
 - Added an integration tracking gate for keeping roadmap, architecture,
   product record, export contracts, and package scripts aligned.
+- Added local Helios/Easy PG source readiness status tooling for source-derived
+  import preparation.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene
