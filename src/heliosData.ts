@@ -4,6 +4,27 @@ export type HeliosMetric = {
   note: string
 }
 
+export type HeliosStatusSignal = {
+  label: string
+  value: string
+  detail: string
+}
+
+export type HeliosDatasetStatus = {
+  name: string
+  coverage: string
+  cadence: string
+  gate: string
+}
+
+export type HeliosStatusExport = {
+  schemaVersion: 1
+  source: 'helios-public-status'
+  exportedAt: string
+  signals: HeliosStatusSignal[]
+  datasets: HeliosDatasetStatus[]
+}
+
 export type HeliosLane = {
   label: string
   title: string
@@ -17,23 +38,54 @@ export type HeliosPipelineStage = {
   detail: string
 }
 
-export const heliosMetrics: HeliosMetric[] = [
-  {
-    label: 'Engine',
-    value: 'complete',
-    note: 'Event pipeline, risk checks, execution simulation, portfolio state, and observability are implemented.',
-  },
-  {
-    label: 'Platform',
-    value: 'building',
-    note: 'Broker adapters, database layer, auth, crawler, API, and React UI are being integrated in stages.',
-  },
-  {
-    label: 'Data gate',
-    value: 'strict',
-    note: 'Research is gated by validated 1m K-line completeness and explicit session rules.',
-  },
-]
+export const heliosStatusExport: HeliosStatusExport = {
+  schemaVersion: 1,
+  source: 'helios-public-status',
+  exportedAt: '2026-06-30',
+  signals: [
+    {
+      label: 'Engine',
+      value: 'complete',
+      detail: 'Event pipeline, risk checks, execution simulation, portfolio state, and observability are implemented.',
+    },
+    {
+      label: 'Platform',
+      value: 'building',
+      detail: 'Broker adapters, database layer, auth, crawler, API, and React UI are being integrated in stages.',
+    },
+    {
+      label: 'Data gate',
+      value: 'strict',
+      detail: 'Research is gated by validated 1m K-line completeness and explicit session rules.',
+    },
+  ],
+  datasets: [
+    {
+      name: 'Taiwan equity 1m bars',
+      coverage: 'collection-state export pending',
+      cadence: 'market sessions',
+      gate: 'session-aware completeness check',
+    },
+    {
+      name: 'Index futures research bars',
+      coverage: 'TXF / MTX / MXF separated',
+      cadence: 'intraday sessions',
+      gate: 'roll calendar and contract-cost validation',
+    },
+    {
+      name: 'Strategy candidates',
+      coverage: 'research-only summaries',
+      cadence: 'manual promotion',
+      gate: 'benchmark, slippage, and stability review',
+    },
+  ],
+}
+
+export const heliosMetrics: HeliosMetric[] = heliosStatusExport.signals.map(signal => ({
+  label: signal.label,
+  value: signal.value,
+  note: signal.detail,
+}))
 
 export const heliosResearchLanes: HeliosLane[] = [
   {
@@ -94,7 +146,10 @@ export const heliosQualityRules = [
 
 export function publicHeliosText() {
   return [
+    heliosStatusExport.source,
+    heliosStatusExport.exportedAt,
     ...heliosMetrics.flatMap(metric => [metric.label, metric.value, metric.note]),
+    ...heliosStatusExport.datasets.flatMap(dataset => [dataset.name, dataset.coverage, dataset.cadence, dataset.gate]),
     ...heliosResearchLanes.flatMap(lane => [lane.label, lane.title, lane.summary, lane.status]),
     ...heliosPipeline.flatMap(stage => [stage.stage, stage.title, stage.detail]),
     ...heliosQualityRules,

@@ -35,8 +35,8 @@ export const corePlatformAreas: PlatformProgress[] = [
     title: 'Helios',
     status: 'read-only public status',
     publicSurface: 'Quant research summaries, data-quality gates, and curated platform status.',
-    completed: ['Research lanes', 'Data pipeline stages', 'Private operations boundary'],
-    next: 'Read-only status export before any live adapter.',
+    completed: ['Research lanes', 'Data pipeline stages', 'Private operations boundary', 'Public status export contract'],
+    next: 'Generate a sanitized status export from Helios before any live adapter.',
   },
   {
     id: 'easyDb',
@@ -44,8 +44,8 @@ export const corePlatformAreas: PlatformProgress[] = [
     title: 'Easy DB',
     status: 'schema browser',
     publicSurface: 'PostgreSQL schema learning, column search, relationship hints, and query notes.',
-    completed: ['Sanitized example schema', 'Column search', 'Private connection boundary'],
-    next: 'Authenticated schema export and query-note publishing flow.',
+    completed: ['Sanitized example schema', 'Column search', 'Private connection boundary', 'Public schema export contract'],
+    next: 'Generate a sanitized schema export from Easy PG and add query-note publishing.',
   },
 ]
 

@@ -73,6 +73,8 @@ This file is a public-safe product record.
   comments/reactions.
 - Added the first owner moderation tools for Blog and Algo comments, including
   admin listing plus hide/restore controls.
+- Added public export contracts for Helios status and Easy DB schema snapshots,
+  and changed both public sections to render export metadata.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

@@ -36,8 +36,8 @@ import {
 import { algoTracks, categorySummaries, loadRatedPracticeProblems, multiTagSummaries, tutorialsForTrack, type AlgoTrackId } from './algoTracksData'
 import type { ProblemBankItem } from './problemBank'
 import { blocksToMarkdown, estimateReadMinutes, markdownToBlocks } from './blogEditor'
-import { easyDbCapabilities, easyDbExampleSchema, easyDbWorkflow, filterEasyDbTables } from './easyDbData'
-import { heliosMetrics, heliosPipeline, heliosQualityRules, heliosResearchLanes } from './heliosData'
+import { easyDbCapabilities, easyDbExampleSchema, easyDbPublicSchemaExport, easyDbWorkflow, filterEasyDbTables } from './easyDbData'
+import { heliosMetrics, heliosPipeline, heliosQualityRules, heliosResearchLanes, heliosStatusExport } from './heliosData'
 import { areaCompletionCount, corePlatformAreas, releaseRhythm, type PlatformAreaId } from './platformProgressData'
 import { tutorials, type SolutionLanguage, type Step, type Tutorial } from './tutorialData'
 import { problemNumberFor, searchTutorials } from './search'
@@ -188,6 +188,17 @@ function EasyDbSection() {
       <div><b>{easyDbExampleSchema.reduce((sum, table) => sum + table.columns.length, 0)}</b><span>columns</span></div>
       <div><b>{relationCount}</b><span>relations</span></div>
     </div>
+
+    <section className="export-card" aria-label="Easy DB public export">
+      <div>
+        <span>PUBLIC EXPORT</span>
+        <h2>{easyDbPublicSchemaExport.sourceLabel}</h2>
+      </div>
+      <p>Schema v{easyDbPublicSchemaExport.schemaVersion} · {easyDbPublicSchemaExport.exportedAt}</p>
+      <div className="export-tags">
+        {easyDbPublicSchemaExport.safety.map(item => <em key={item}>{item}</em>)}
+      </div>
+    </section>
 
     <div className="tools-grid capability-grid">
       {easyDbCapabilities.map(tool => <article key={tool.title} className="tool-card">
@@ -1023,6 +1034,21 @@ function HeliosSection() {
         </div>
         <p>公開頁只放整理後的研究內容和安全狀態摘要；資料擷取、券商設定、私有 logs 和寫入操作不公開。</p>
       </div>
+
+      <section className="export-card helios-export" aria-label="Helios public export">
+        <div>
+          <span>PUBLIC EXPORT</span>
+          <h2>{heliosStatusExport.source}</h2>
+        </div>
+        <p>Schema v{heliosStatusExport.schemaVersion} · {heliosStatusExport.exportedAt}</p>
+        <div className="export-grid">
+          {heliosStatusExport.datasets.map(dataset => <article key={dataset.name}>
+            <span>{dataset.name}</span>
+            <b>{dataset.coverage}</b>
+            <small>{dataset.cadence} · {dataset.gate}</small>
+          </article>)}
+        </div>
+      </section>
 
       <div className="quant-grid">
         {heliosResearchLanes.map(panel => <article key={panel.label} className="quant-panel">

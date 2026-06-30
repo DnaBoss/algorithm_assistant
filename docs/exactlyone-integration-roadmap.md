@@ -67,6 +67,8 @@ Adapter boundary rule:
   module is deliberately promoted into the ExactlyOne API.
 - Cross-project calls must be explicit adapters, not copied private logic
   scattered into the frontend.
+- Public data must pass through the export contracts in
+  [platform-export-contracts.md](platform-export-contracts.md).
 
 ## Data Domains
 
@@ -136,7 +138,8 @@ Integration plan:
   without exposing private trade operations. Initial public research/status
   cards exist in this branch.
 - Phase 2: read-only dashboard cards sourced from exported/status JSON, such as
-  ingestion state and research notes.
+  ingestion state and research notes. The first public status export contract
+  exists with schema version, export date, signals, and dataset coverage cards.
 - Phase 3: authenticated operational dashboard for market-data collection
   state.
 - Phase 4: deliberate API adapter if Helios services should be queried live.
@@ -165,7 +168,9 @@ Integration plan:
   feature is PostgreSQL-specific. Public schema-browser example exists in this
   branch.
 - Phase 2: embed or reimplement the public landing and schema-view workflow in
-  ExactlyOne using sanitized exports from Easy PG.
+  ExactlyOne using sanitized exports from Easy PG. The first public schema
+  export contract exists with schema version, source label, safety rules, and
+  sanitized table metadata.
 - Phase 3: authenticated connection-profile management and live schema export.
 - Phase 4: safe query notes and export-to-post workflow.
 
@@ -238,6 +243,7 @@ Status: partially implemented.
 - Safe public/private boundary is represented in the UI.
 - Source Easy PG capabilities were reviewed: profiles, SSH tunnel, schema
   snapshot, column search, SQL import, and schema export.
+- Public Easy DB schema export contract exists and feeds the schema browser.
 - Need decide whether live private operations use iframe, reverse proxy, shared
   Rust module, or reimplementation.
 - Needs authenticated admin-only operations.
@@ -249,9 +255,11 @@ Status: partially implemented.
 - Public Helios research/status section exists with read-only metrics,
   research lanes, pipeline stages, research gates, and private-operation
   boundaries.
+- Public Helios status export contract exists and feeds the status cards.
 - Define private operational dashboard.
-- Choose export-file, API adapter, or database read model.
-- Add read-only status export proof before live operations.
+- Generate a sanitized status export from Helios into this contract.
+- Choose export-file, API adapter, or database read model after the export
+  proof is stable.
 
 ### M6: Production Runtime
 
@@ -267,10 +275,10 @@ Status: partially implemented.
 
 ## Next Action Queue
 
-1. Add moderation tools for public Blog and Algo interactions.
-2. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
+1. Generate the first sanitized Easy DB export from Easy PG.
+2. Generate the first sanitized Helios status export from Helios.
+3. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
    reimplementation.
-3. Add Helios read-only status proof before live operations.
 4. Decide whether this verified platform slice should deploy before the next
    integration slice.
 
@@ -329,6 +337,7 @@ Status: partially implemented.
   practice, category index, and multi-tag index.
 - Added first server-side public interaction rate limiting for Blog and Algo
   comments/reactions.
+- Added public export contracts for Helios status and Easy DB schema data.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

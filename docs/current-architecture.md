@@ -21,6 +21,10 @@ Public architecture snapshot for the ExactlyOne website.
 - `src/blogData.ts`: public blog post data model and published post list.
 - `src/platformProgressData.ts`: homepage progress model for the four core
   ExactlyOne integration areas and production release cadence.
+- `src/heliosData.ts`: public Helios status export contract, metrics, dataset
+  summaries, research lanes, pipeline stages, and safety rules.
+- `src/easyDbData.ts`: public Easy DB schema export contract, sanitized schema
+  browser data, capabilities, and workflow notes.
 - `src/tutorialData.ts`: tutorial definitions, tutorial content, solutions,
   idea explanations, complexity text.
 - `src/problemBank.ts`: problem catalog data.
@@ -41,6 +45,8 @@ Public architecture snapshot for the ExactlyOne website.
 - `docs/blog-content-system.md`: public-safe local content-system workflow.
 - `docs/exactlyone-integration-roadmap.md`: long-task roadmap for integrating
   Blog, Algo Lab, Helios, and Easy DB.
+- `docs/platform-export-contracts.md`: public export contracts for Helios and
+  Easy DB.
 - `docs/engineering-standards.md`: architecture, design-pattern, testing, and
   verification handoff standards.
 
@@ -62,9 +68,13 @@ Public architecture snapshot for the ExactlyOne website.
   DB, including completed slices, next steps, and release cadence.
 - Public Helios research/status section with read-only metrics, research lanes,
   data pipeline stages, research gates, and private-operation boundary copy.
+- Public Helios status export contract with schema version, export date,
+  signals, and dataset coverage cards.
 - Public Easy DB section shell with Easy PG as the PostgreSQL-focused tool.
 - Easy DB public schema-browser surface with sanitized example tables, column
   search, relationship hints, workflow notes, and private-operation boundary.
+- Public Easy DB schema export contract with schema version, export source,
+  safety rules, and sanitized table metadata.
 - Algo Lab search and filtering.
 - Algo Lab track hierarchy with Blind 75, Top 150, rating-based practice,
   category index, and multi-tag index pages.
@@ -95,10 +105,11 @@ Public architecture snapshot for the ExactlyOne website.
 - Algo Lab: tutorial section, personal notes per problem, public replies,
   reactions, admin note UI, track hierarchy, and full-width complete solutions.
   Owner moderation tools exist for comments.
-- Helios: public research/status page sourced from sanitized Helios project
-  knowledge, plus future authenticated operational dashboards.
-- Easy DB: database tooling page sourced from the Easy PG app, with public
-  docs/examples and authenticated real connection operations.
+- Helios: public research/status page sourced through the safe Helios public
+  status export contract, plus future authenticated operational dashboards.
+- Easy DB: database tooling page sourced through the safe Easy DB public schema
+  export contract, with public docs/examples and authenticated real connection
+  operations.
 
 ## External Source Repositories
 
