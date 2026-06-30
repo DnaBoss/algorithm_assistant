@@ -71,6 +71,8 @@ Adapter boundary rule:
   [platform-export-contracts.md](platform-export-contracts.md).
 - Candidate export bundles must pass `npm run check:platform-exports` before
   they are committed into `src/platformExports.generated.json`.
+- Candidate export bundles should be reviewed with
+  `npm run review:platform-export` before they are promoted.
 - Helios public status summaries must pass
   `scripts/helios-status-to-platform-export.mjs` before they update the public
   Helios bundle.
@@ -260,6 +262,7 @@ Status: partially implemented.
 - Easy PG schema-to-platform sanitizer exists with allow-list protection.
 - Local Easy PG import workflow exists through `.platform-local/` and
   `npm run import:easy-pg-schema`.
+- Platform export review/promote workflow exists for local candidate bundles.
 - Need decide whether live private operations use iframe, reverse proxy, shared
   Rust module, or reimplementation.
 - Needs authenticated admin-only operations.
@@ -366,6 +369,7 @@ Status: partially implemented.
 - Added and locally verified the git-ignored Easy PG import workflow using a
   real source export and local allow-list.
 - Added the Helios status-to-platform sanitizer and local import workflow.
+- Added candidate review/promote tooling for platform exports.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

@@ -7,6 +7,8 @@ Current frontend bundle: `src/platformExports.generated.json`.
 
 Import and validation tool: `scripts/import-platform-exports.mjs`.
 
+Candidate review tool: `scripts/review-platform-export.mjs`.
+
 ## Shared Rules
 
 - Exports are read-only inputs for the public site.
@@ -115,6 +117,7 @@ cp easy-pg-schema-export.json .platform-local/easy-pg-schema.local.json
 printf '%s\n' public.users public.projects > .platform-local/easy-pg-public-tables.local.txt
 npm run import:easy-pg-schema
 npm run check:platform-exports
+npm run review:platform-export
 ```
 
 `.platform-local/`, `*.local.json`, and `*.local.txt` are ignored by git.
@@ -145,7 +148,15 @@ mkdir -p .platform-local
 cp helios-status.json .platform-local/helios-status.local.json
 npm run import:helios-status
 npm run check:platform-exports
+npm run review:platform-export
 ```
 
 `npm run check:platform-exports` also runs the Easy PG and Helios sanitizer
 self-tests.
+
+When the candidate report is acceptable, promote it into the frontend bundle:
+
+```bash
+npm run promote:platform-export
+npm run release:gate
+```

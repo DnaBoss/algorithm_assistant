@@ -35,8 +35,8 @@ export const corePlatformAreas: PlatformProgress[] = [
     title: 'Helios',
     status: 'read-only public status',
     publicSurface: 'Quant research summaries, data-quality gates, and curated platform status.',
-    completed: ['Research lanes', 'Data pipeline stages', 'Private operations boundary', 'Public status export contract', 'Export import gate', 'Helios status sanitizer'],
-    next: 'Generate the first source-derived sanitized status export from Helios before any live adapter.',
+    completed: ['Research lanes', 'Data pipeline stages', 'Private operations boundary', 'Public status export contract', 'Export import gate', 'Helios status sanitizer', 'Candidate review'],
+    next: 'Review and promote the first source-derived sanitized status export from Helios.',
   },
   {
     id: 'easyDb',
@@ -44,8 +44,8 @@ export const corePlatformAreas: PlatformProgress[] = [
     title: 'Easy DB',
     status: 'schema browser',
     publicSurface: 'PostgreSQL schema learning, column search, relationship hints, and query notes.',
-    completed: ['Sanitized example schema', 'Column search', 'Private connection boundary', 'Public schema export contract', 'Export import gate', 'Easy PG sanitizer', 'Local import workflow'],
-    next: 'Approve public Easy PG table allow-list for the first committed source-derived bundle.',
+    completed: ['Sanitized example schema', 'Column search', 'Private connection boundary', 'Public schema export contract', 'Export import gate', 'Easy PG sanitizer', 'Local import workflow', 'Candidate review'],
+    next: 'Approve public Easy PG table allow-list and promote the first source-derived bundle.',
   },
 ]
 
