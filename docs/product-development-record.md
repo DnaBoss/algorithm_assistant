@@ -89,6 +89,7 @@ This file is a public-safe product record.
 - Added platform export review warnings, JSON review output, and default
   promotion protection against likely public export regressions.
 - Added local JSONL audit history for platform export candidate reviews.
+- Added a local status command for summarizing platform export review history.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

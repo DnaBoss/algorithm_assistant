@@ -163,12 +163,14 @@ npm run review:platform-export
 node scripts/review-platform-export.mjs --fail-on-regression
 node scripts/review-platform-export.mjs --json .platform-local/platform-review.local.json
 npm run audit:platform-export
+npm run status:platform-export
 ```
 
 `npm run audit:platform-export` writes the latest review JSON and appends a
 JSONL history entry under `.platform-local/`. This history is intentionally
 local-only so source candidate reviews can be tracked without publishing private
-operator context.
+operator context. `npm run status:platform-export` summarizes that local
+history and highlights the latest warning count.
 
 Promotion refuses regression warnings by default. Use an explicit override only
 after deliberately accepting the reduced public export:

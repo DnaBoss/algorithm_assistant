@@ -77,6 +77,7 @@ Adapter boundary rule:
   export regressions by default during promotion.
 - Candidate review can append git-ignored local JSONL audit history for
   source-export review decisions.
+- Local review history can be summarized with `npm run status:platform-export`.
 - Helios public status summaries must pass
   `scripts/helios-status-to-platform-export.mjs` before they update the public
   Helios bundle.
@@ -271,6 +272,7 @@ Status: partially implemented.
   removed Helios signals/datasets or reduced Easy DB schema coverage.
 - Local platform export audit history can be appended for each Easy DB source
   candidate review.
+- Local Easy DB candidate history can be summarized without opening raw JSONL.
 - Owner admin has a Platform workbench showing the current generated Easy DB
   export date, table count, column count, and public table list.
 - Need decide whether live private operations use iframe, reverse proxy, shared
@@ -293,6 +295,7 @@ Status: partially implemented.
   Helios status surface before promotion.
 - Local platform export audit history can be appended for each Helios source
   candidate review.
+- Local Helios candidate history can be summarized without opening raw JSONL.
 - Define private operational dashboard.
 - Generate the first source-derived sanitized status export from Helios into
   this contract.
@@ -393,6 +396,8 @@ Status: partially implemented.
 - Added local platform export review history so candidate decisions can be
   tracked across Helios/Easy DB import attempts without publishing local source
   context.
+- Added a local platform export status command that summarizes review history
+  and the latest warning count.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.
