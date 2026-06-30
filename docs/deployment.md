@@ -62,6 +62,20 @@ Run a database backup before migrations that change stored content:
 ./scripts/backup-blog-db.sh
 ```
 
+## Release Gate
+
+Run the release gate before any production deploy:
+
+```bash
+npm run release:gate
+```
+
+The gate refuses internal temporary branch prefixes, checks for public-file leak
+candidates, verifies the backup helper is executable, then runs lint, tests,
+frontend build, and API check. Passing the gate does not deploy anything or
+spend GCP budget. Deploy manually only when the change is a coherent feature
+slice, security fix, or public content release.
+
 ## Build And Deploy
 
 After selecting a GCP account and project:

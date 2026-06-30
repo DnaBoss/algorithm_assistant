@@ -244,12 +244,15 @@ Status: partially implemented.
 
 ### M6: Production Runtime
 
-Status: partially designed.
+Status: partially implemented.
 
 - Current branch includes Cloud Run artifacts.
+- `npm run release:gate` exists and verifies branch hygiene, public-file leak
+  candidates, backup-helper presence, lint, tests, frontend build, and API
+  check before any manual deploy.
 - Need decide whether production stays on VM/Nginx for now or moves to Cloud
   Run.
-- Need database backup/restore check before storing important content.
+- Need restore drill before storing important production content.
 
 ## Next Action Queue
 
@@ -308,6 +311,9 @@ Status: partially designed.
   boundaries.
 - Added a homepage platform progress surface that keeps the four core
   integration areas and release cadence visible from one place.
+- Added `npm run release:gate` as the pre-deploy gate for branch hygiene,
+  public-file leak scanning, backup-helper presence, lint, tests, frontend
+  build, and API check.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

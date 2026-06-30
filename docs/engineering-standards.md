@@ -67,6 +67,15 @@ npm run build
 npm run build:api
 ```
 
+Before a production deploy, run the combined release gate:
+
+```bash
+npm run release:gate
+```
+
+The release gate is stricter than the handoff minimum because it also checks
+branch hygiene, backup-helper presence, and public-file leak candidates.
+
 When a change touches Rust backend behavior, add or update Rust tests and run:
 
 ```bash

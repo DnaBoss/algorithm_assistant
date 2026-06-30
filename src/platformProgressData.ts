@@ -52,7 +52,7 @@ export const corePlatformAreas: PlatformProgress[] = [
 export const releaseRhythm = {
   title: 'Release rhythm',
   status: 'batch verified slices',
-  summary: 'Production updates should wait for coherent feature slices, security fixes, or public content releases.',
+  summary: 'Run npm run release:gate first; deploy only coherent feature slices, security fixes, or public content releases.',
 }
 
 export function areaCompletionCount() {

@@ -36,6 +36,8 @@ Public architecture snapshot for the ExactlyOne website.
 - `cloudbuild.yaml`: Cloud Build recipe for image build/push and Cloud Run
   deployment.
 - `scripts/deploy-gcp.sh`: local GCP deployment helper.
+- `scripts/release-gate.sh`: pre-deploy gate for branch hygiene, public leak
+  scan, backup-helper presence, lint, tests, frontend build, and API check.
 - `docs/blog-content-system.md`: public-safe local content-system workflow.
 - `docs/exactlyone-integration-roadmap.md`: long-task roadmap for integrating
   Blog, Algo Lab, Helios, and Easy DB.

@@ -64,6 +64,9 @@ This file is a public-safe product record.
   research lanes, data pipeline stages, and private-operation boundaries.
 - Added a homepage platform progress surface for Blog, Algo Lab, Helios, and
   Easy DB, including completed slices, next steps, and release cadence.
+- Added `npm run release:gate` as the pre-deploy gate for branch hygiene,
+  public-file leak scanning, backup-helper presence, lint, tests, frontend
+  build, and API check.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene
