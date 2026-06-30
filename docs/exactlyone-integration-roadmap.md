@@ -184,10 +184,10 @@ Status: partially implemented on `feature/exactlyone-platform-integration`.
 
 ### M2: Blog Security And Community
 
-Status: not started.
+Status: partially implemented.
 
-- Owner password change.
-- Optional TOTP.
+- Owner password change API and admin UI exist.
+- Optional TOTP setup, enable, disable, and login verification exist.
 - Public comments.
 - Reactions.
 - Moderation and rate-limiting boundary.
@@ -263,3 +263,13 @@ Status: partially designed.
   expanding the solution keeps it outside the right-side state panel, renders it
   under the lesson content, uses `pre-wrap`, and does not create page-level
   horizontal scrolling.
+- Added owner security foundation: password-change endpoint, TOTP setup,
+  TOTP login verification, TOTP enable/disable endpoints, admin UI controls,
+  and database migration `002_admin_security.sql`.
+- Added blog editor support for inline Markdown links and video blocks.
+- Verified local PostgreSQL migration through `npm run db:migrate`; the
+  `admin_users` table has `password_changed_at`, `totp_secret`, and
+  `totp_enabled`.
+- Verified local owner-security API smoke flow: login, security profile,
+  password change, TOTP setup, TOTP enable, TOTP login, TOTP disable, and
+  password restore.

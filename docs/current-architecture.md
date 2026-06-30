@@ -26,7 +26,7 @@ Public architecture snapshot for the ExactlyOne website.
 - `src/App.css` and `src/index.css`: visual design.
 - `server/`: Rust blog API, admin auth, migrations, seed script, media upload,
   PostgreSQL access, and production static file serving.
-- `server/migrations/`: SQL migrations for the content database.
+- `server/migrations/`: SQL migrations for content and owner security.
 - `docker-compose.blog.yml`: local PostgreSQL service for blog development.
 - `Dockerfile`: Cloud Run image that builds the frontend and runs the Rust
   server as the public/API entrypoint.
@@ -65,15 +65,17 @@ Public architecture snapshot for the ExactlyOne website.
 - Personal blog section with a published-only data layer, search, category/tag
   filters, article metadata, reading view, heading table of contents, and empty
   states.
-- Blog admin page with login, post list, draft/published editor, Markdown-like
-  authoring, live preview, save, and delete.
+- Blog admin page with login, optional TOTP login code, post list,
+  draft/published editor, Markdown-like authoring, live preview, save, delete,
+  password change, and TOTP setup/disable controls.
 - Blog API with published post reads, admin login, draft/published CRUD,
-  migration runner, admin seed script, media upload boundary, and backup script.
+  password change, optional TOTP verification, migration runner, admin seed
+  script, media upload boundary, and backup script.
 
 ## Planned Integration Surfaces
 
-- Blog: homepage, owner-managed posts, future comments/reactions, password
-  change, and optional TOTP.
+- Blog: homepage, owner-managed posts, password change, optional TOTP, and
+  future comments/reactions.
 - Algo Lab: tutorial section, personal notes per problem, public replies,
   reactions, track hierarchy, and full-width complete solutions.
 - Helios: public research page and future authenticated operational dashboards

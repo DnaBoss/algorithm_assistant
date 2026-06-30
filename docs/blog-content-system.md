@@ -31,16 +31,37 @@ Admin credentials are seeded through environment variables and are not stored in
 source control.
 
 The editor accepts Markdown-like text and stores normalized JSON blocks through
-the API. Supported authoring blocks:
-
-- `## Heading`
-- Paragraphs
-- `- List items`
-- `> Quotes`
-- Fenced code blocks
+the API.
 
 The admin page includes a live article preview, draft/published status, slug,
 category, tags, estimated read minutes, and delete support.
+
+## Owner Security
+
+- Admin login supports an optional 6-digit TOTP code after TOTP is enabled.
+- Password changes use `PUT /api/admin/password` and require the current
+  password plus a new password of at least 12 characters.
+- TOTP setup uses `POST /api/admin/totp/setup`, then
+  `POST /api/admin/totp/enable` with a valid code from the authenticator app.
+- TOTP disable uses `POST /api/admin/totp/disable` and requires the owner
+  password; if TOTP is enabled, it also requires a current TOTP code.
+
+## Authoring Blocks
+
+Supported authoring blocks:
+
+- `## Heading`
+- Paragraphs with inline Markdown links.
+- `- List items`
+- `> Quotes`
+- Fenced code blocks.
+- Video blocks.
+
+Video block syntax:
+
+```markdown
+@[Video title](https://www.youtube.com/watch?v=example)
+```
 
 ## Data Boundary
 
@@ -74,6 +95,7 @@ Backups are written to `backups/`, which is ignored by git.
 npm run test
 ```
 
-Current automated coverage includes frontend Markdown/block mapping tests and
-Rust API validation/password tests. Add repository and API integration tests as
-database behavior grows.
+Current automated coverage includes frontend Markdown/block mapping tests,
+video-block parsing tests, Rust API validation/password tests, and TOTP
+generator tests. Add repository and API integration tests as database behavior
+grows.

@@ -49,6 +49,9 @@ This file is a public-safe product record.
 - Moved Algo Lab complete solutions into an independent full-width section.
 - Changed the homepage direction to Blog-first while keeping Helios, Algo Lab,
   Easy DB, and other major sections reachable from the home page.
+- Added owner security foundation: password change plus optional TOTP setup and
+  login verification.
+- Added richer blog editor content support for inline links and video blocks.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old assistant-prefixed remote branch and continued branch hygiene

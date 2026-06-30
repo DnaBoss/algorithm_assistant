@@ -3,7 +3,10 @@ use std::{env, net::SocketAddr, path::PathBuf};
 use anyhow::{Context, Result};
 use argon2::{
     Argon2,
-    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
+    password_hash::{
+        PasswordHash, PasswordHasher, PasswordVerifier, SaltString,
+        rand_core::{OsRng, RngCore},
+    },
 };
 use axum::{
     Json, Router,
@@ -14,9 +17,11 @@ use axum::{
     routing::{get, post, put},
 };
 use chrono::{DateTime, Utc};
+use hmac::{Hmac, Mac};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sha1::Sha1;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use tokio::{fs, net::TcpListener};
 use tower_http::services::{ServeDir, ServeFile};
@@ -101,9 +106,11 @@ struct BlogPostInput {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct LoginInput {
     email: String,
     password: String,
+    totp_code: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -119,6 +126,42 @@ struct PostsOutput {
 #[derive(Serialize)]
 struct PostOutput {
     post: BlogPost,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AdminSecurityOutput {
+    email: String,
+    display_name: String,
+    totp_enabled: bool,
+    password_changed_at: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PasswordChangeInput {
+    current_password: String,
+    new_password: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TotpSetupOutput {
+    secret: String,
+    otpauth_url: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TotpEnableInput {
+    code: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TotpDisableInput {
+    password: String,
+    code: Option<String>,
 }
 
 #[tokio::main]
@@ -210,6 +253,11 @@ async fn serve(config: Config, pool: PgPool) -> Result<()> {
         .route("/api/blog/posts", get(list_published_posts))
         .route("/api/blog/posts/{slug}", get(get_published_post))
         .route("/api/admin/login", post(login))
+        .route("/api/admin/security", get(admin_security))
+        .route("/api/admin/password", put(change_admin_password))
+        .route("/api/admin/totp/setup", post(setup_admin_totp))
+        .route("/api/admin/totp/enable", post(enable_admin_totp))
+        .route("/api/admin/totp/disable", post(disable_admin_totp))
         .route(
             "/api/admin/posts",
             get(list_admin_posts).post(create_admin_post),
@@ -274,14 +322,14 @@ async fn login(
     State(state): State<AppState>,
     Json(input): Json<LoginInput>,
 ) -> Result<Json<TokenOutput>, ApiError> {
-    let row: Option<(Uuid, String)> = sqlx::query_as(
-        "select id, password_hash from admin_users where email = $1 and role = 'admin' limit 1",
+    let row: Option<(Uuid, String, bool, Option<String>)> = sqlx::query_as(
+        "select id, password_hash, totp_enabled, totp_secret from admin_users where email = $1 and role = 'admin' limit 1",
     )
     .bind(input.email.trim().to_lowercase())
     .fetch_optional(&state.pool)
     .await
     .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
-    let Some((id, password_hash)) = row else {
+    let Some((id, password_hash, totp_enabled, totp_secret)) = row else {
         return Err(ApiError::new(
             StatusCode::UNAUTHORIZED,
             "invalid_credentials",
@@ -293,9 +341,170 @@ async fn login(
             "invalid_credentials",
         ));
     }
+    if totp_enabled {
+        let Some(secret) = totp_secret else {
+            return Err(ApiError::new(StatusCode::UNAUTHORIZED, "invalid_totp"));
+        };
+        if !verify_totp_code(input.totp_code.as_deref().unwrap_or_default(), &secret) {
+            return Err(ApiError::new(StatusCode::UNAUTHORIZED, "invalid_totp"));
+        }
+    }
     Ok(Json(TokenOutput {
         token: sign_token(id, &state.jwt_secret)?,
     }))
+}
+
+async fn admin_security(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<AdminSecurityOutput>, ApiError> {
+    let admin_id = require_admin(&state, &headers).await?;
+    let row: Option<(String, String, bool, Option<DateTime<Utc>>)> = sqlx::query_as(
+        "select email, display_name, totp_enabled, password_changed_at from admin_users where id = $1 and role = 'admin'",
+    )
+    .bind(admin_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    let Some((email, display_name, totp_enabled, password_changed_at)) = row else {
+        return Err(ApiError::new(StatusCode::UNAUTHORIZED, "invalid_token"));
+    };
+    Ok(Json(AdminSecurityOutput {
+        email,
+        display_name,
+        totp_enabled,
+        password_changed_at: password_changed_at.map(|time| time.format("%Y-%m-%d").to_string()),
+    }))
+}
+
+async fn change_admin_password(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(input): Json<PasswordChangeInput>,
+) -> Result<StatusCode, ApiError> {
+    let admin_id = require_admin(&state, &headers).await?;
+    if input.new_password.len() < 12 {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "password_too_short",
+        ));
+    }
+    let row: Option<(String,)> = sqlx::query_as("select password_hash from admin_users where id = $1")
+        .bind(admin_id)
+        .fetch_optional(&state.pool)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    let Some((password_hash,)) = row else {
+        return Err(ApiError::new(StatusCode::UNAUTHORIZED, "invalid_token"));
+    };
+    if !verify_password(&input.current_password, &password_hash) {
+        return Err(ApiError::new(
+            StatusCode::UNAUTHORIZED,
+            "invalid_credentials",
+        ));
+    }
+    let new_hash = hash_password(&input.new_password)
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    sqlx::query("update admin_users set password_hash = $2, password_changed_at = now(), updated_at = now() where id = $1")
+        .bind(admin_id)
+        .bind(new_hash)
+        .execute(&state.pool)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn setup_admin_totp(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<TotpSetupOutput>, ApiError> {
+    let admin_id = require_admin(&state, &headers).await?;
+    let row: Option<(String,)> = sqlx::query_as("select email from admin_users where id = $1")
+        .bind(admin_id)
+        .fetch_optional(&state.pool)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    let Some((email,)) = row else {
+        return Err(ApiError::new(StatusCode::UNAUTHORIZED, "invalid_token"));
+    };
+    let secret = generate_totp_secret();
+    sqlx::query("update admin_users set totp_secret = $2, totp_enabled = false, updated_at = now() where id = $1")
+        .bind(admin_id)
+        .bind(&secret)
+        .execute(&state.pool)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    let otpauth_url = format!(
+        "otpauth://totp/ExactlyOne:{}?secret={}&issuer=ExactlyOne&algorithm=SHA1&digits=6&period=30",
+        email, secret
+    );
+    Ok(Json(TotpSetupOutput {
+        secret,
+        otpauth_url,
+    }))
+}
+
+async fn enable_admin_totp(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(input): Json<TotpEnableInput>,
+) -> Result<StatusCode, ApiError> {
+    let admin_id = require_admin(&state, &headers).await?;
+    let row: Option<(Option<String>,)> =
+        sqlx::query_as("select totp_secret from admin_users where id = $1")
+            .bind(admin_id)
+            .fetch_optional(&state.pool)
+            .await
+            .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    let Some((Some(secret),)) = row else {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "totp_not_setup"));
+    };
+    if !verify_totp_code(&input.code, &secret) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "invalid_totp"));
+    }
+    sqlx::query("update admin_users set totp_enabled = true, updated_at = now() where id = $1")
+        .bind(admin_id)
+        .execute(&state.pool)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn disable_admin_totp(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(input): Json<TotpDisableInput>,
+) -> Result<StatusCode, ApiError> {
+    let admin_id = require_admin(&state, &headers).await?;
+    let row: Option<(String, bool, Option<String>)> =
+        sqlx::query_as("select password_hash, totp_enabled, totp_secret from admin_users where id = $1")
+            .bind(admin_id)
+            .fetch_optional(&state.pool)
+            .await
+            .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    let Some((password_hash, totp_enabled, totp_secret)) = row else {
+        return Err(ApiError::new(StatusCode::UNAUTHORIZED, "invalid_token"));
+    };
+    if !verify_password(&input.password, &password_hash) {
+        return Err(ApiError::new(
+            StatusCode::UNAUTHORIZED,
+            "invalid_credentials",
+        ));
+    }
+    if totp_enabled {
+        let Some(secret) = totp_secret.as_deref() else {
+            return Err(ApiError::new(StatusCode::BAD_REQUEST, "totp_not_setup"));
+        };
+        if !verify_totp_code(input.code.as_deref().unwrap_or_default(), secret) {
+            return Err(ApiError::new(StatusCode::BAD_REQUEST, "invalid_totp"));
+        }
+    }
+    sqlx::query("update admin_users set totp_enabled = false, totp_secret = null, updated_at = now() where id = $1")
+        .bind(admin_id)
+        .execute(&state.pool)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn list_admin_posts(
@@ -448,6 +657,77 @@ fn verify_password(password: &str, password_hash: &str) -> bool {
                 .ok()
         })
         .is_some()
+}
+
+fn generate_totp_secret() -> String {
+    let mut bytes = [0_u8; 20];
+    OsRng.fill_bytes(&mut bytes);
+    base32_no_padding(&bytes)
+}
+
+fn verify_totp_code(code: &str, secret: &str) -> bool {
+    let code = code.trim().replace(' ', "");
+    if code.len() != 6 || !code.chars().all(|item| item.is_ascii_digit()) {
+        return false;
+    }
+    let now_step = Utc::now().timestamp() / 30;
+    (-1..=1).any(|offset| totp_code(secret, now_step + offset) == Some(code.as_str().to_string()))
+}
+
+fn totp_code(secret: &str, step: i64) -> Option<String> {
+    let key = base32_decode_no_padding(secret)?;
+    let counter = (step as u64).to_be_bytes();
+    let mut mac = Hmac::<Sha1>::new_from_slice(&key).ok()?;
+    mac.update(&counter);
+    let bytes = mac.finalize().into_bytes();
+    let offset = (bytes[19] & 0x0f) as usize;
+    let binary = (((bytes[offset] & 0x7f) as u32) << 24)
+        | ((bytes[offset + 1] as u32) << 16)
+        | ((bytes[offset + 2] as u32) << 8)
+        | (bytes[offset + 3] as u32);
+    Some(format!("{:06}", binary % 1_000_000))
+}
+
+fn base32_no_padding(bytes: &[u8]) -> String {
+    const ALPHABET: &[u8; 32] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    let mut output = String::new();
+    let mut buffer = 0_u16;
+    let mut bits = 0_u8;
+    for byte in bytes {
+        buffer = (buffer << 8) | (*byte as u16);
+        bits += 8;
+        while bits >= 5 {
+            let index = ((buffer >> (bits - 5)) & 0b11111) as usize;
+            output.push(ALPHABET[index] as char);
+            bits -= 5;
+        }
+    }
+    if bits > 0 {
+        let index = ((buffer << (5 - bits)) & 0b11111) as usize;
+        output.push(ALPHABET[index] as char);
+    }
+    output
+}
+
+fn base32_decode_no_padding(value: &str) -> Option<Vec<u8>> {
+    let mut output = Vec::new();
+    let mut buffer = 0_u32;
+    let mut bits = 0_u8;
+    for item in value.chars().filter(|item| !item.is_whitespace()) {
+        let upper = item.to_ascii_uppercase();
+        let decoded = match upper {
+            'A'..='Z' => upper as u8 - b'A',
+            '2'..='7' => upper as u8 - b'2' + 26,
+            _ => return None,
+        } as u32;
+        buffer = (buffer << 5) | decoded;
+        bits += 5;
+        if bits >= 8 {
+            output.push(((buffer >> (bits - 8)) & 0xff) as u8);
+            bits -= 8;
+        }
+    }
+    Some(output)
 }
 
 fn to_post(row: BlogPostRow) -> BlogPost {
@@ -728,5 +1008,22 @@ mod tests {
 
         assert!(verify_password("correct horse battery staple", &hash));
         assert!(!verify_password("wrong password", &hash));
+    }
+
+    #[test]
+    fn base32_round_trip_preserves_totp_secret_bytes() {
+        let bytes = b"12345678901234567890";
+        let encoded = base32_no_padding(bytes);
+
+        assert_eq!(encoded, "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ");
+        assert_eq!(base32_decode_no_padding(&encoded), Some(bytes.to_vec()));
+    }
+
+    #[test]
+    fn totp_code_matches_rfc6238_sha1_vector() {
+        let secret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
+
+        assert_eq!(totp_code(secret, 59 / 30).as_deref(), Some("287082"));
+        assert_eq!(totp_code(secret, 1111111109 / 30).as_deref(), Some("081804"));
     }
 }

@@ -1,7 +1,21 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import './App.css'
 import { blogCategories, blogTags, publishedBlogPosts, searchBlogPosts, type BlogPost } from './blogData'
-import { adminLogin, deleteAdminPost, fetchAdminPosts, fetchPublishedPosts, saveAdminPost, type BlogPostPayload } from './blogApi'
+import {
+  adminLogin,
+  changeAdminPassword,
+  deleteAdminPost,
+  disableAdminTotp,
+  enableAdminTotp,
+  fetchAdminPosts,
+  fetchAdminSecurity,
+  fetchPublishedPosts,
+  saveAdminPost,
+  setupAdminTotp,
+  type AdminSecurity,
+  type BlogPostPayload,
+  type TotpSetup,
+} from './blogApi'
 import { blocksToMarkdown, estimateReadMinutes, markdownToBlocks } from './blogEditor'
 import { tutorials, type SolutionLanguage, type Step, type Tutorial } from './tutorialData'
 import { problemNumberFor, searchTutorials } from './search'
@@ -63,7 +77,7 @@ function ProjectHub({ onSelect }: { onSelect: (section: SiteSection) => void }) 
       <div className="hero-bg" />
       <p className="eyebrow">EXACTLYONE BLOG</p>
       <h1>個人 blog</h1>
-      <p className="lead">把日子寫成路。把路走成自己。</p>
+      <p className="lead">Per aspera ad astra.</p>
       <div className="hero-actions">
         <button className="btn primary" onClick={() => onSelect('blog')}>閱讀 blog</button>
         <button className="btn secondary" onClick={() => onSelect('algoLab')}>進入 Algo Lab</button>
@@ -251,11 +265,19 @@ function AdminBlogSection() {
   const [token, setToken] = useState(() => localStorage.getItem('exactlyone_admin_token') ?? '')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [totpCode, setTotpCode] = useState('')
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [editingId, setEditingId] = useState<string | undefined>()
   const [draft, setDraft] = useState<BlogPostPayload>(emptyEditorPost)
   const [markdown, setMarkdown] = useState(blocksToMarkdown(emptyEditorPost.body))
   const [message, setMessage] = useState('')
+  const [security, setSecurity] = useState<AdminSecurity | null>(null)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [totpSetup, setTotpSetup] = useState<TotpSetup | null>(null)
+  const [totpVerifyCode, setTotpVerifyCode] = useState('')
+  const [totpDisablePassword, setTotpDisablePassword] = useState('')
+  const [totpDisableCode, setTotpDisableCode] = useState('')
   const previewPost: BlogPost = {
     id: editingId ?? 'preview',
     slug: draft.slug ?? 'preview',
@@ -276,10 +298,16 @@ function AdminBlogSection() {
     setPosts(nextPosts)
   }
 
+  const loadSecurity = async (nextToken = token) => {
+    if (!nextToken) return
+    setSecurity(await fetchAdminSecurity(nextToken))
+  }
+
   useEffect(() => {
     if (!token) return undefined
     const timer = window.setTimeout(() => {
       loadPosts().catch(() => undefined)
+      loadSecurity().catch(() => undefined)
     }, 0)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -287,10 +315,47 @@ function AdminBlogSection() {
 
   const login = async () => {
     setMessage('')
-    const nextToken = await adminLogin(email, password)
+    const nextToken = await adminLogin(email, password, totpCode)
     localStorage.setItem('exactlyone_admin_token', nextToken)
     setToken(nextToken)
     await loadPosts(nextToken)
+    await loadSecurity(nextToken)
+  }
+
+  const changePassword = async () => {
+    setMessage('')
+    await changeAdminPassword(token, currentPassword, newPassword)
+    setCurrentPassword('')
+    setNewPassword('')
+    await loadSecurity()
+    setMessage('密碼已更新')
+  }
+
+  const startTotpSetup = async () => {
+    setMessage('')
+    const setup = await setupAdminTotp(token)
+    setTotpSetup(setup)
+    setTotpVerifyCode('')
+    await loadSecurity()
+  }
+
+  const enableTotp = async () => {
+    setMessage('')
+    await enableAdminTotp(token, totpVerifyCode)
+    setTotpSetup(null)
+    setTotpVerifyCode('')
+    await loadSecurity()
+    setMessage('TOTP 已啟用')
+  }
+
+  const disableTotp = async () => {
+    setMessage('')
+    await disableAdminTotp(token, totpDisablePassword, totpDisableCode)
+    setTotpDisablePassword('')
+    setTotpDisableCode('')
+    setTotpSetup(null)
+    await loadSecurity()
+    setMessage('TOTP 已停用')
   }
 
   const editPost = (post: BlogPost) => {
@@ -345,6 +410,7 @@ function AdminBlogSection() {
       <h1>Blog Admin</h1>
       <label><span>Email</span><input value={email} onChange={event => setEmail(event.target.value)} /></label>
       <label><span>Password</span><input type="password" value={password} onChange={event => setPassword(event.target.value)} /></label>
+      <label><span>TOTP code</span><input inputMode="numeric" value={totpCode} onChange={event => setTotpCode(event.target.value)} placeholder="啟用二階段後需要" /></label>
       <button className="primary" onClick={() => login().catch(() => setMessage('登入失敗'))}>登入</button>
       {message && <p className="admin-message">{message}</p>}
     </div>
@@ -353,6 +419,12 @@ function AdminBlogSection() {
   return <section className="admin-shell">
     <aside className="admin-panel admin-list">
       <div className="admin-head-row"><div><p className="eyebrow">ADMIN</p><h1>Blog Admin</h1></div><button className="secondary" onClick={startNewPost}>新增</button></div>
+      <section className="admin-security-card">
+        <span>Security</span>
+        <b>{security?.email ?? 'Owner'}</b>
+        <small>TOTP：{security?.totpEnabled ? '已啟用' : '未啟用'}</small>
+        {security?.passwordChangedAt && <small>密碼更新：{security.passwordChangedAt}</small>}
+      </section>
       {posts.map(post => <button key={post.id} className={editingId === post.id ? 'active' : ''} onClick={() => editPost(post)}>
         <span>{post.status}</span>
         <b>{post.title || 'Untitled'}</b>
@@ -369,7 +441,7 @@ function AdminBlogSection() {
         <label><span>Read minutes</span><input type="number" min="1" value={draft.readMinutes} onChange={event => setDraft({ ...draft, readMinutes: Number(event.target.value) })} /></label>
         <label><span>Status</span><select value={draft.status} onChange={event => setDraft({ ...draft, status: event.target.value as BlogPostPayload['status'] })}><option value="draft">draft</option><option value="published">published</option></select></label>
       </div>
-      <label><span>Markdown</span><textarea className="body-markdown" value={markdown} onChange={event => updateMarkdown(event.target.value)} placeholder={'## 小標題\n\n寫下段落。\n\n- 條列\n\n> 引用\n\n```rust\nfn main() {}\n```'} /></label>
+      <label><span>Markdown</span><textarea className="body-markdown" value={markdown} onChange={event => updateMarkdown(event.target.value)} placeholder={'## 小標題\n\n寫下段落，也可以放 [超連結](https://example.com)。\n\n@[影片標題](https://www.youtube.com/watch?v=...)\n\n- 條列\n\n> 引用\n\n```rust\nfn main() {}\n```'} /></label>
       <section className="admin-preview" aria-label="article preview">
         <span>Preview</span>
         <h2>{previewPost.title}</h2>
@@ -378,6 +450,38 @@ function AdminBlogSection() {
       </section>
       <div className="admin-actions"><button className="primary" onClick={() => savePost().catch(error => setMessage(error instanceof Error ? error.message : '儲存失敗'))}>儲存</button>{editingId && <button className="danger" onClick={() => deletePost().catch(error => setMessage(error instanceof Error ? error.message : '刪除失敗'))}>刪除</button>}<button className="secondary" onClick={() => { localStorage.removeItem('exactlyone_admin_token'); setToken('') }}>登出</button></div>
       {message && <p className="admin-message">{message}</p>}
+      <section className="admin-security">
+        <div>
+          <p className="eyebrow">SECURITY</p>
+          <h2>Owner security</h2>
+        </div>
+        <div className="admin-security-grid">
+          <section>
+            <h3>密碼修改</h3>
+            <label><span>Current password</span><input type="password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} /></label>
+            <label><span>New password</span><input type="password" value={newPassword} onChange={event => setNewPassword(event.target.value)} placeholder="至少 12 字元" /></label>
+            <button className="secondary" onClick={() => changePassword().catch(error => setMessage(error instanceof Error ? error.message : '密碼更新失敗'))}>更新密碼</button>
+          </section>
+          <section>
+            <h3>TOTP 二階段驗證</h3>
+            <p>{security?.totpEnabled ? '目前已啟用。登入時會要求 6 位數驗證碼。' : '目前未啟用。先產生 secret，加入驗證器後輸入 6 位數驗證碼。'}</p>
+            {!security?.totpEnabled && <button className="secondary" onClick={() => startTotpSetup().catch(error => setMessage(error instanceof Error ? error.message : 'TOTP setup 失敗'))}>產生 TOTP secret</button>}
+            {totpSetup && <div className="totp-setup">
+              <span>Secret</span>
+              <code>{totpSetup.secret}</code>
+              <span>otpauth URL</span>
+              <code>{totpSetup.otpauthUrl}</code>
+              <label><span>Verify code</span><input inputMode="numeric" value={totpVerifyCode} onChange={event => setTotpVerifyCode(event.target.value)} /></label>
+              <button className="primary" onClick={() => enableTotp().catch(error => setMessage(error instanceof Error ? error.message : 'TOTP 啟用失敗'))}>啟用 TOTP</button>
+            </div>}
+            {security?.totpEnabled && <div className="totp-setup">
+              <label><span>Password</span><input type="password" value={totpDisablePassword} onChange={event => setTotpDisablePassword(event.target.value)} /></label>
+              <label><span>TOTP code</span><input inputMode="numeric" value={totpDisableCode} onChange={event => setTotpDisableCode(event.target.value)} /></label>
+              <button className="danger" onClick={() => disableTotp().catch(error => setMessage(error instanceof Error ? error.message : 'TOTP 停用失敗'))}>停用 TOTP</button>
+            </div>}
+          </section>
+        </div>
+      </section>
     </article>
   </section>
 }
@@ -406,12 +510,80 @@ function BlogBody({ post }: { post: BlogPost }) {
   return <div className="blog-body">
     {post.body.map((block, index) => {
       if (block.kind === 'heading') return <h3 id={`blog-section-${index}`} key={index}>{block.text}</h3>
-      if (block.kind === 'list') return <ul key={index}>{block.items.map(item => <li key={item}>{item}</li>)}</ul>
+      if (block.kind === 'list') return <ul key={index}>{block.items.map(item => <li key={item}>{renderInlineMarkdown(item)}</li>)}</ul>
       if (block.kind === 'code') return <pre key={index}><code>{block.code}</code></pre>
-      if (block.kind === 'quote') return <blockquote key={index}>{block.text}</blockquote>
-      return <p key={index}>{block.text}</p>
+      if (block.kind === 'quote') return <blockquote key={index}>{renderInlineMarkdown(block.text)}</blockquote>
+      if (block.kind === 'video') return <BlogVideo key={index} url={block.url} title={block.title} />
+      return <p key={index}>{renderInlineMarkdown(block.text)}</p>
     })}
   </div>
+}
+
+function renderInlineMarkdown(text: string) {
+  const nodes: ReactNode[] = []
+  const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = linkPattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index))
+    }
+    nodes.push(
+      <a key={`${match[2]}-${match.index}`} href={match[2]} target="_blank" rel="noreferrer">
+        {match[1]}
+      </a>,
+    )
+    lastIndex = match.index + match[0].length
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex))
+  }
+
+  return nodes.length > 0 ? nodes : text
+}
+
+function BlogVideo({ url, title }: { url: string; title?: string }) {
+  const embedUrl = videoEmbedUrl(url)
+  const label = title || 'Embedded video'
+
+  if (embedUrl) {
+    return <figure className="blog-video">
+      <iframe src={embedUrl} title={label} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+      {title && <figcaption>{title}</figcaption>}
+    </figure>
+  }
+
+  if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+    return <figure className="blog-video">
+      <video controls src={url} />
+      {title && <figcaption>{title}</figcaption>}
+    </figure>
+  }
+
+  return <p className="blog-video-link"><a href={url} target="_blank" rel="noreferrer">{label}</a></p>
+}
+
+function videoEmbedUrl(url: string) {
+  try {
+    const parsed = new URL(url)
+    if (parsed.hostname === 'youtu.be') {
+      const id = parsed.pathname.split('/').filter(Boolean)[0]
+      return id ? `https://www.youtube.com/embed/${id}` : ''
+    }
+    if (parsed.hostname.endsWith('youtube.com')) {
+      const id = parsed.searchParams.get('v')
+      return id ? `https://www.youtube.com/embed/${id}` : ''
+    }
+    if (parsed.hostname.endsWith('vimeo.com')) {
+      const id = parsed.pathname.split('/').filter(Boolean)[0]
+      return id ? `https://player.vimeo.com/video/${id}` : ''
+    }
+  } catch {
+    return ''
+  }
+  return ''
 }
 
 function HeliosSection() {

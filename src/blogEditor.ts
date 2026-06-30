@@ -6,6 +6,7 @@ export function blocksToMarkdown(blocks: BlogPost['body']) {
     if (block.kind === 'quote') return `> ${block.text}`
     if (block.kind === 'list') return block.items.map(item => `- ${item}`).join('\n')
     if (block.kind === 'code') return ['```' + (block.language ?? ''), block.code, '```'].join('\n')
+    if (block.kind === 'video') return `@[${block.title ?? 'video'}](${block.url})`
     return block.text
   }).join('\n\n')
 }
@@ -71,6 +72,14 @@ export function markdownToBlocks(markdown: string): BlogBlock[] {
       continue
     }
 
+    const video = parseVideoLine(trimmed)
+    if (video) {
+      flushParagraph()
+      flushList()
+      blocks.push(video)
+      continue
+    }
+
     if (trimmed.startsWith('> ')) {
       flushParagraph()
       flushList()
@@ -100,6 +109,16 @@ export function markdownToBlocks(markdown: string): BlogBlock[] {
   flushList()
 
   return blocks.length > 0 ? blocks : [{ kind: 'paragraph', text: '' }]
+}
+
+function parseVideoLine(line: string): BlogBlock | null {
+  const match = line.match(/^@\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)$/)
+  if (!match) return null
+  return {
+    kind: 'video',
+    title: match[1].trim() || undefined,
+    url: match[2],
+  }
 }
 
 export function estimateReadMinutes(markdown: string) {

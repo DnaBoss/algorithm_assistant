@@ -6,6 +6,7 @@ export type BlogBlock =
   | { kind: 'list'; items: string[] }
   | { kind: 'code'; code: string; language?: string }
   | { kind: 'quote'; text: string }
+  | { kind: 'video'; url: string; title?: string }
 
 export type BlogPost = {
   id: string
@@ -49,6 +50,7 @@ export function searchBlogPosts(posts: BlogPost[], query: string) {
       ...post.body.flatMap(block => {
         if (block.kind === 'list') return block.items
         if (block.kind === 'code') return [block.code]
+        if (block.kind === 'video') return [block.title ?? '', block.url]
         return [block.text]
       }),
     ].join(' ').toLowerCase()

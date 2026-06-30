@@ -42,4 +42,19 @@ describe('blog editor markdown mapping', () => {
   it('does not treat each whitespace token as a full minute', () => {
     expect(estimateReadMinutes('one two three four five six seven eight nine ten')).toBe(1)
   })
+
+  it('keeps markdown links inside paragraph text', () => {
+    expect(markdownToBlocks('Read [ExactlyOne](https://exactlyone.dev).')).toEqual([
+      { kind: 'paragraph', text: 'Read [ExactlyOne](https://exactlyone.dev).' },
+    ])
+  })
+
+  it('parses and serializes video blocks', () => {
+    const blocks = markdownToBlocks('@[Launch notes](https://www.youtube.com/watch?v=abc123)')
+
+    expect(blocks).toEqual([
+      { kind: 'video', title: 'Launch notes', url: 'https://www.youtube.com/watch?v=abc123' },
+    ])
+    expect(blocksToMarkdown(blocks)).toBe('@[Launch notes](https://www.youtube.com/watch?v=abc123)')
+  })
 })
