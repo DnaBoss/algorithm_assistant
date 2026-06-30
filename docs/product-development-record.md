@@ -83,6 +83,9 @@ This file is a public-safe product record.
   source-derived schema exports.
 - Added Easy PG schema export inspection for allow-list review before
   source-derived candidate generation.
+- Added a source-export review playbook for Helios and Easy DB source-derived
+  candidates, covering local readiness, source-shape review, candidate
+  generation, automated review, promotion, release decisions, and evidence.
 - Added a Helios status sanitizer that converts curated local status summaries
   into the public platform bundle.
 - Added local candidate review and promote tooling for platform export changes.

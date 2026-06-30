@@ -9,6 +9,8 @@ Import and validation tool: `scripts/import-platform-exports.mjs`.
 
 Candidate review tool: `scripts/review-platform-export.mjs`.
 
+Source review playbook: `docs/source-export-review-playbook.md`.
+
 ## Shared Rules
 
 - Exports are read-only inputs for the public site.
@@ -125,6 +127,10 @@ npm run review:platform-export
 `npm run inspect:easy-pg-schema` summarizes table counts, allow-list matches,
 missing allow-list entries, and sensitive-name hints before a candidate bundle
 is produced.
+
+Before promotion, follow `docs/source-export-review-playbook.md` so local
+source readiness, source-shape review, candidate generation, automated review,
+audit history, release decision, and evidence rules are all checked in order.
 
 Running the tool without arguments validates the current generated export:
 

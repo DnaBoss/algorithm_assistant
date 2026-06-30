@@ -70,6 +70,8 @@ Public architecture snapshot for the ExactlyOne website.
   Blog, Algo Lab, Helios, and Easy DB.
 - `docs/platform-export-contracts.md`: public export contracts for Helios and
   Easy DB.
+- `docs/source-export-review-playbook.md`: review levels and release rules for
+  source-derived Helios and Easy DB candidate exports.
 - `docs/engineering-standards.md`: architecture, design-pattern, testing, and
   verification handoff standards.
 
@@ -114,6 +116,8 @@ Public architecture snapshot for the ExactlyOne website.
   reduction is explicitly accepted. Candidate review history can be appended
   locally through `npm run audit:platform-export` and summarized through
   `npm run status:platform-export`.
+- Source-derived candidate exports should follow
+  `docs/source-export-review-playbook.md` before promotion or deployment.
 - The release gate runs `npm run check:integration-tracking` so the roadmap,
   architecture snapshot, product record, export contracts, and key tracking
   scripts do not silently drift away from the four-area integration plan.

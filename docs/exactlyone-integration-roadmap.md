@@ -78,6 +78,9 @@ Adapter boundary rule:
 - Candidate review can append git-ignored local JSONL audit history for
   source-export review decisions.
 - Local review history can be summarized with `npm run status:platform-export`.
+- Source-derived candidate exports must follow
+  [source-export-review-playbook.md](source-export-review-playbook.md) before
+  promotion or deployment.
 - Helios public status summaries must pass
   `scripts/helios-status-to-platform-export.mjs` before they update the public
   Helios bundle.
@@ -214,6 +217,8 @@ Status: in progress.
   covering Blog, Algo Lab, Helios, and Easy DB.
 - Use `npm run status:source-repos` locally before source-derived imports to
   confirm Helios and Easy PG source readiness.
+- Keep the source-export review playbook aligned with the import, review,
+  audit, promote, and release-gate workflow.
 
 ### M1: Blog-First ExactlyOne Shell
 
@@ -275,6 +280,8 @@ Status: partially implemented.
   `npm run import:easy-pg-schema`.
 - Local Easy PG schema exports can be inspected before allow-list selection
   through `npm run inspect:easy-pg-schema`.
+- Source-derived Easy PG candidates now have a documented review path in
+  `docs/source-export-review-playbook.md`.
 - Platform export review/promote workflow exists for local candidate bundles.
 - Platform export review now flags likely regressions before promotion, such as
   removed Helios signals/datasets or reduced Easy DB schema coverage.
@@ -303,6 +310,8 @@ Status: partially implemented.
   export date, signal count, dataset count, and dataset gates.
 - Platform export review now catches candidates that would reduce the public
   Helios status surface before promotion.
+- Source-derived Helios candidates now have a documented review path in
+  `docs/source-export-review-playbook.md`.
 - Local platform export audit history can be appended for each Helios source
   candidate review.
 - Local Helios candidate history can be summarized without opening raw JSONL.
@@ -328,9 +337,9 @@ Status: partially implemented.
 ## Next Action Queue
 
 1. Generate the first source-derived sanitized Easy DB export from Easy PG using
-   the allow-list sanitizer.
+   the allow-list sanitizer and source-export review playbook.
 2. Generate the first source-derived sanitized Helios status export from
-   Helios.
+   Helios using the source-export review playbook.
 3. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
    reimplementation.
 4. Decide whether this verified platform slice should deploy before the next
@@ -400,6 +409,9 @@ Status: partially implemented.
   real source export and local allow-list.
 - Added local Easy PG schema export inspection for table counts, allow-list
   matches, and sensitive-name hints before candidate generation.
+- Added a source-export review playbook for Helios and Easy DB candidate
+  imports, including local readiness, source-shape review, candidate generation,
+  automated review, promotion, release decision, and evidence rules.
 - Added the Helios status-to-platform sanitizer and local import workflow.
 - Added candidate review/promote tooling for platform exports.
 - Added an owner-only Platform admin workbench that summarizes the current
