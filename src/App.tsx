@@ -437,7 +437,7 @@ const emptyAlgoNote: AlgoNotePayload = {
   body: [{ kind: 'paragraph', text: '' }],
 }
 
-type AdminView = 'blog' | 'algo' | 'moderation'
+type AdminView = 'blog' | 'algo' | 'moderation' | 'platform'
 
 function AdminBlogSection() {
   const [token, setToken] = useState(() => localStorage.getItem('exactlyone_admin_token') ?? '')
@@ -477,6 +477,23 @@ function AdminBlogSection() {
   }
   const selectedAlgoTutorial = tutorials.find(tutorial => tutorial.id === selectedAlgoProblemId) ?? tutorials[0]
   const selectedAlgoNote = algoNotes.find(note => note.problemId === selectedAlgoProblemId)
+  const easyDbColumnCount = easyDbPublicSchemaExport.tables.reduce((sum, table) => sum + table.columns.length, 0)
+  const platformExports = [
+    {
+      id: 'helios',
+      label: 'Helios',
+      title: heliosStatusExport.source,
+      exportedAt: heliosStatusExport.exportedAt,
+      meta: `${heliosStatusExport.signals.length} signals · ${heliosStatusExport.datasets.length} datasets`,
+    },
+    {
+      id: 'easy-db',
+      label: 'Easy DB',
+      title: easyDbPublicSchemaExport.sourceLabel,
+      exportedAt: easyDbPublicSchemaExport.exportedAt,
+      meta: `${easyDbPublicSchemaExport.tables.length} tables · ${easyDbColumnCount} columns`,
+    },
+  ]
   const previewAlgoNote: AlgoProblemNote = {
     id: selectedAlgoNote?.id ?? 'preview',
     problemId: selectedAlgoProblemId,
@@ -694,6 +711,7 @@ function AdminBlogSection() {
         <button className={adminView === 'blog' ? 'active' : ''} onClick={() => setAdminView('blog')}>Blog</button>
         <button className={adminView === 'algo' ? 'active' : ''} onClick={() => editAlgoNote(selectedAlgoProblemId)}>Algo</button>
         <button className={adminView === 'moderation' ? 'active' : ''} onClick={() => { setAdminView('moderation'); loadModeration().catch(() => setMessage('留言載入失敗')) }}>Moderation</button>
+        <button className={adminView === 'platform' ? 'active' : ''} onClick={() => setAdminView('platform')}>Platform</button>
       </div>
       {adminView === 'blog' && posts.map(post => <button key={post.id} className={editingId === post.id ? 'active' : ''} onClick={() => editPost(post)}>
         <span>{post.status}</span>
@@ -716,6 +734,14 @@ function AdminBlogSection() {
           <span>{item.source} · {item.status}</span>
           <b>{item.displayName}</b>
           <small>{item.targetLabel} · {item.createdAt}</small>
+        </button>)}
+      </div>}
+      {adminView === 'platform' && <div className="admin-note-list">
+        <small>Current generated export</small>
+        {platformExports.map(item => <button key={item.id} className="active" type="button">
+          <span>{item.label}</span>
+          <b>{item.title}</b>
+          <small>{item.meta} · {item.exportedAt}</small>
         </button>)}
       </div>}
     </aside>
@@ -797,7 +823,7 @@ function AdminBlogSection() {
         <button className="secondary" onClick={() => { localStorage.removeItem('exactlyone_admin_token'); setToken('') }}>登出</button>
       </div>
       {message && <p className="admin-message">{message}</p>}
-    </article> : <article className="admin-editor">
+    </article> : adminView === 'moderation' ? <article className="admin-editor">
       <div className="admin-head-row">
         <div>
           <p className="eyebrow">MODERATION</p>
@@ -820,6 +846,53 @@ function AdminBlogSection() {
               : <button className="secondary" onClick={() => updateModerationStatus(item, 'published').catch(error => setMessage(error instanceof Error ? error.message : '更新失敗'))}>恢復</button>}
           </div>
         </article>)}
+      </section>
+      <div className="admin-actions">
+        <button className="secondary" onClick={() => { localStorage.removeItem('exactlyone_admin_token'); setToken('') }}>登出</button>
+      </div>
+      {message && <p className="admin-message">{message}</p>}
+    </article> : <article className="admin-editor">
+      <div className="admin-head-row">
+        <div>
+          <p className="eyebrow">PLATFORM</p>
+          <h2>Integration exports</h2>
+        </div>
+        <small>Release gate: npm run release:gate</small>
+      </div>
+      <section className="platform-admin-grid">
+        <article className="platform-admin-card">
+          <span>Helios</span>
+          <h3>{heliosStatusExport.source}</h3>
+          <p>Exported {heliosStatusExport.exportedAt}</p>
+          <div className="platform-admin-stats">
+            <b>{heliosStatusExport.signals.length}<small>signals</small></b>
+            <b>{heliosStatusExport.datasets.length}<small>datasets</small></b>
+          </div>
+          <ul>
+            {heliosStatusExport.datasets.map(dataset => <li key={dataset.name}><b>{dataset.name}</b><small>{dataset.coverage} · {dataset.gate}</small></li>)}
+          </ul>
+        </article>
+        <article className="platform-admin-card">
+          <span>Easy DB</span>
+          <h3>{easyDbPublicSchemaExport.sourceLabel}</h3>
+          <p>Exported {easyDbPublicSchemaExport.exportedAt}</p>
+          <div className="platform-admin-stats">
+            <b>{easyDbPublicSchemaExport.tables.length}<small>tables</small></b>
+            <b>{easyDbColumnCount}<small>columns</small></b>
+          </div>
+          <ul>
+            {easyDbPublicSchemaExport.tables.map(table => <li key={`${table.schema}.${table.name}`}><b>{table.schema}.{table.name}</b><small>{table.purpose}</small></li>)}
+          </ul>
+        </article>
+      </section>
+      <section className="admin-preview platform-admin-flow">
+        <span>Workflow</span>
+        <ol>
+          <li>Source exports become local candidates first.</li>
+          <li>Candidate review checks schema, safety rules, and public text.</li>
+          <li>Promotion updates the generated bundle only after review passes.</li>
+          <li>The release gate must pass before any production deploy.</li>
+        </ol>
       </section>
       <div className="admin-actions">
         <button className="secondary" onClick={() => { localStorage.removeItem('exactlyone_admin_token'); setToken('') }}>登出</button>

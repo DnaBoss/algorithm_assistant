@@ -263,6 +263,8 @@ Status: partially implemented.
 - Local Easy PG import workflow exists through `.platform-local/` and
   `npm run import:easy-pg-schema`.
 - Platform export review/promote workflow exists for local candidate bundles.
+- Owner admin has a Platform workbench showing the current generated Easy DB
+  export date, table count, column count, and public table list.
 - Need decide whether live private operations use iframe, reverse proxy, shared
   Rust module, or reimplementation.
 - Needs authenticated admin-only operations.
@@ -277,6 +279,8 @@ Status: partially implemented.
 - Public Helios status export contract exists and feeds the status cards.
 - Generated platform export bundle exists and is validated by release gate.
 - Helios status-to-platform sanitizer exists.
+- Owner admin has a Platform workbench showing the current generated Helios
+  export date, signal count, dataset count, and dataset gates.
 - Define private operational dashboard.
 - Generate the first source-derived sanitized status export from Helios into
   this contract.
@@ -303,7 +307,9 @@ Status: partially implemented.
    Helios.
 3. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
    reimplementation.
-4. Decide whether this verified platform slice should deploy before the next
+4. Add owner-only export audit history after the first real source-derived
+   imports are promoted.
+5. Decide whether this verified platform slice should deploy before the next
    integration slice.
 
 ## Progress Log
@@ -370,6 +376,8 @@ Status: partially implemented.
   real source export and local allow-list.
 - Added the Helios status-to-platform sanitizer and local import workflow.
 - Added candidate review/promote tooling for platform exports.
+- Added an owner-only Platform admin workbench that summarizes the current
+  generated Helios and Easy DB exports before deployment decisions.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

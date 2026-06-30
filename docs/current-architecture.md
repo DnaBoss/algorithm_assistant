@@ -114,7 +114,8 @@ Public architecture snapshot for the ExactlyOne website.
   states.
 - Admin page with login, optional TOTP login code, Blog post management, Algo
   problem-note management, Markdown-like authoring, live preview, save, delete,
-  password change, TOTP setup/disable controls, and comment moderation.
+  password change, TOTP setup/disable controls, comment moderation, and a
+  platform export workbench for Helios/Easy DB generated data.
 - API with published Blog reads, admin login, draft/published Blog CRUD, Algo
   note admin endpoints, public comments, public reactions, public interaction
   rate limiting, owner comment moderation, password change, optional TOTP
@@ -130,10 +131,12 @@ Public architecture snapshot for the ExactlyOne website.
   Owner moderation tools exist for comments.
 - Helios: public research/status page sourced through the safe Helios public
   status export contract and import gate, plus future authenticated
-  operational dashboards.
+  operational dashboards. The current generated export is visible in the
+  owner-only platform workbench.
 - Easy DB: database tooling page sourced through the safe Easy DB public schema
   export contract and import gate, with public docs/examples and authenticated
-  real connection operations.
+  real connection operations. The current generated export is visible in the
+  owner-only platform workbench.
 
 ## External Source Repositories
 

@@ -84,6 +84,8 @@ This file is a public-safe product record.
 - Added a Helios status sanitizer that converts curated local status summaries
   into the public platform bundle.
 - Added local candidate review and promote tooling for platform export changes.
+- Added an owner-only Platform admin workbench for reviewing the current
+  generated Helios and Easy DB export summaries from the site admin surface.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene
