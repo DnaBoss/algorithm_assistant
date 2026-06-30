@@ -54,6 +54,8 @@ This file is a public-safe product record.
 - Added richer blog editor content support for inline links and video blocks.
 - Added the first public community layer for Blog posts: anonymous comments and
   browser-local reaction deduplication for published articles.
+- Added the first Algo Lab personal-note and community layer: problem notes by
+  problem id, public comments, and browser-local reactions.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

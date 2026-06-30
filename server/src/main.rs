@@ -157,6 +157,47 @@ struct BlogReactionInput {
     anonymous_key: String,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AlgoProblemNote {
+    id: Uuid,
+    problem_id: String,
+    status: String,
+    title: String,
+    updated_at: String,
+    body: Vec<Value>,
+}
+
+#[derive(sqlx::FromRow)]
+struct AlgoProblemNoteRow {
+    id: Uuid,
+    problem_id: String,
+    status: String,
+    title: String,
+    body: Value,
+    updated_at: DateTime<Utc>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AlgoProblemOutput {
+    note: Option<AlgoProblemNote>,
+    interactions: BlogInteractionsOutput,
+}
+
+#[derive(Serialize)]
+struct AlgoNotesOutput {
+    notes: Vec<AlgoProblemNote>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AlgoNoteInput {
+    status: String,
+    title: String,
+    body: Vec<Value>,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct LoginInput {
@@ -313,6 +354,18 @@ async fn serve(config: Config, pool: PgPool) -> Result<()> {
             post(create_post_reaction),
         )
         .route("/api/blog/posts/{slug}", get(get_published_post))
+        .route(
+            "/api/algo/problems/{problem_id}/note",
+            get(get_algo_problem_note),
+        )
+        .route(
+            "/api/algo/problems/{problem_id}/comments",
+            post(create_algo_comment),
+        )
+        .route(
+            "/api/algo/problems/{problem_id}/reactions",
+            post(create_algo_reaction),
+        )
         .route("/api/admin/login", post(login))
         .route("/api/admin/security", get(admin_security))
         .route("/api/admin/password", put(change_admin_password))
@@ -327,6 +380,11 @@ async fn serve(config: Config, pool: PgPool) -> Result<()> {
             "/api/admin/posts/{id}",
             put(update_admin_post).delete(delete_admin_post),
         )
+        .route("/api/admin/algo-notes", get(list_admin_algo_notes))
+        .route(
+            "/api/admin/algo-notes/{problem_id}",
+            put(upsert_admin_algo_note).delete(delete_admin_algo_note),
+        )
         .route("/api/admin/media", post(upload_media))
         .nest_service(&config.media_public_path, ServeDir::new(&config.media_dir))
         .fallback_service(
@@ -337,13 +395,13 @@ async fn serve(config: Config, pool: PgPool) -> Result<()> {
 
     let addr = SocketAddr::from((config.host, config.port));
     let listener = TcpListener::bind(addr).await?;
-    println!("ExactlyOne Rust blog API listening on {addr}");
+    println!("ExactlyOne Rust API listening on {addr}");
     axum::serve(listener, app).await?;
     Ok(())
 }
 
 async fn health() -> Json<Value> {
-    Json(serde_json::json!({ "ok": true, "service": "exactlyone-rust-blog-api" }))
+    Json(serde_json::json!({ "ok": true, "service": "exactlyone-rust-api" }))
 }
 
 async fn list_published_posts(
@@ -441,6 +499,84 @@ async fn create_post_reaction(
 
     Ok(Json(
         load_blog_interactions(&state.pool, post_id, Some(&anonymous_key)).await?,
+    ))
+}
+
+async fn get_algo_problem_note(
+    State(state): State<AppState>,
+    Path(problem_id): Path<String>,
+    Query(query): Query<BlogInteractionQuery>,
+) -> Result<Json<AlgoProblemOutput>, ApiError> {
+    let problem_id = clean_problem_id(&problem_id)?;
+    let row = sqlx::query_as::<_, AlgoProblemNoteRow>(
+        "select id, problem_id, status, title, body, updated_at from algo_problem_notes where problem_id = $1 and status = 'published' limit 1",
+    )
+    .bind(&problem_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    Ok(Json(AlgoProblemOutput {
+        note: row.map(to_algo_note),
+        interactions: load_algo_interactions(
+            &state.pool,
+            &problem_id,
+            query.anonymous_key.as_deref(),
+        )
+        .await?,
+    }))
+}
+
+async fn create_algo_comment(
+    State(state): State<AppState>,
+    Path(problem_id): Path<String>,
+    Json(input): Json<BlogCommentInput>,
+) -> Result<(StatusCode, Json<BlogInteractionsOutput>), ApiError> {
+    let problem_id = clean_problem_id(&problem_id)?;
+    let display_name = clean_display_name(input.display_name.as_deref())?;
+    let body = clean_comment_body(&input.body)?;
+    sqlx::query("insert into algo_comments (problem_id, display_name, body) values ($1, $2, $3)")
+        .bind(&problem_id)
+        .bind(display_name)
+        .bind(body)
+        .execute(&state.pool)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(load_algo_interactions(&state.pool, &problem_id, None).await?),
+    ))
+}
+
+async fn create_algo_reaction(
+    State(state): State<AppState>,
+    Path(problem_id): Path<String>,
+    Json(input): Json<BlogReactionInput>,
+) -> Result<Json<BlogInteractionsOutput>, ApiError> {
+    let problem_id = clean_problem_id(&problem_id)?;
+    if !is_reaction_type(&input.reaction_type) {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "invalid_reaction_type",
+        ));
+    }
+    let anonymous_key = clean_anonymous_key(&input.anonymous_key)?;
+    sqlx::query(
+        r#"
+        insert into algo_reactions (problem_id, reaction_type, anonymous_key)
+        values ($1, $2, $3)
+        on conflict (problem_id, reaction_type, anonymous_key) do nothing
+        "#,
+    )
+    .bind(&problem_id)
+    .bind(input.reaction_type)
+    .bind(&anonymous_key)
+    .execute(&state.pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+
+    Ok(Json(
+        load_algo_interactions(&state.pool, &problem_id, Some(&anonymous_key)).await?,
     ))
 }
 
@@ -686,6 +822,82 @@ async fn delete_admin_post(
     Ok(StatusCode::NO_CONTENT)
 }
 
+async fn list_admin_algo_notes(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<AlgoNotesOutput>, ApiError> {
+    require_admin(&state, &headers).await?;
+    let rows = sqlx::query_as::<_, AlgoProblemNoteRow>(
+        "select id, problem_id, status, title, body, updated_at from algo_problem_notes order by updated_at desc",
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    Ok(Json(AlgoNotesOutput {
+        notes: rows.into_iter().map(to_algo_note).collect(),
+    }))
+}
+
+async fn upsert_admin_algo_note(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(problem_id): Path<String>,
+    Json(input): Json<AlgoNoteInput>,
+) -> Result<Json<AlgoProblemOutput>, ApiError> {
+    let admin_id = require_admin(&state, &headers).await?;
+    let problem_id = clean_problem_id(&problem_id)?;
+    validate_algo_note_input(&input)?;
+    let row = sqlx::query_as::<_, AlgoProblemNoteRow>(
+        r#"
+        insert into algo_problem_notes (problem_id, status, title, body, author_id, published_at)
+        values ($1, $2, $3, $4::jsonb, $5, case when $2 = 'published' then now() else null end)
+        on conflict (problem_id) do update
+        set status = excluded.status,
+            title = excluded.title,
+            body = excluded.body,
+            author_id = excluded.author_id,
+            published_at = case
+              when excluded.status = 'published' and algo_problem_notes.published_at is null then now()
+              when excluded.status = 'draft' then null
+              else algo_problem_notes.published_at
+            end,
+            updated_at = now()
+        returning id, problem_id, status, title, body, updated_at
+        "#,
+    )
+    .bind(&problem_id)
+    .bind(input.status)
+    .bind(input.title)
+    .bind(Value::Array(input.body))
+    .bind(admin_id)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+
+    Ok(Json(AlgoProblemOutput {
+        note: Some(to_algo_note(row)),
+        interactions: load_algo_interactions(&state.pool, &problem_id, None).await?,
+    }))
+}
+
+async fn delete_admin_algo_note(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(problem_id): Path<String>,
+) -> Result<StatusCode, ApiError> {
+    require_admin(&state, &headers).await?;
+    let problem_id = clean_problem_id(&problem_id)?;
+    let result = sqlx::query("delete from algo_problem_notes where problem_id = $1")
+        .bind(problem_id)
+        .execute(&state.pool)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+    if result.rows_affected() == 0 {
+        return Err(ApiError::new(StatusCode::NOT_FOUND, "not_found"));
+    }
+    Ok(StatusCode::NO_CONTENT)
+}
+
 async fn published_post_id(pool: &PgPool, slug: &str) -> Result<Uuid, ApiError> {
     let row: Option<(Uuid,)> = sqlx::query_as(
         "select id from blog_posts where slug = $1 and status = 'published' limit 1",
@@ -768,6 +980,85 @@ async fn load_blog_interactions(
     })
 }
 
+async fn load_algo_interactions(
+    pool: &PgPool,
+    problem_id: &str,
+    anonymous_key: Option<&str>,
+) -> Result<BlogInteractionsOutput, ApiError> {
+    let comment_rows = sqlx::query_as::<_, BlogCommentRow>(
+        r#"
+        select id, display_name, body, created_at
+        from algo_comments
+        where problem_id = $1 and status = 'published'
+        order by created_at asc
+        "#,
+    )
+    .bind(problem_id)
+    .fetch_all(pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+
+    let counts: Vec<(String, i64)> = sqlx::query_as(
+        r#"
+        select reaction_type, count(*)::bigint
+        from algo_reactions
+        where problem_id = $1
+        group by reaction_type
+        "#,
+    )
+    .bind(problem_id)
+    .fetch_all(pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+
+    let reacted_types = if let Some(key) = anonymous_key.filter(|item| !item.trim().is_empty()) {
+        sqlx::query_as::<_, (String,)>(
+            "select reaction_type from algo_reactions where problem_id = $1 and anonymous_key = $2",
+        )
+        .bind(problem_id)
+        .bind(key.trim())
+        .fetch_all(pool)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?
+        .into_iter()
+        .map(|item| item.0)
+        .collect::<HashSet<_>>()
+    } else {
+        HashSet::new()
+    };
+
+    Ok(BlogInteractionsOutput {
+        comments: comment_rows.into_iter().map(to_comment).collect(),
+        reactions: reaction_types()
+            .into_iter()
+            .map(|reaction_type| {
+                let reaction_type = reaction_type.to_string();
+                let count = counts
+                    .iter()
+                    .find(|item| item.0 == reaction_type)
+                    .map(|item| item.1)
+                    .unwrap_or(0);
+                BlogReactionSummary {
+                    reacted: reacted_types.contains(&reaction_type),
+                    reaction_type,
+                    count,
+                }
+            })
+            .collect(),
+    })
+}
+
+fn to_algo_note(row: AlgoProblemNoteRow) -> AlgoProblemNote {
+    AlgoProblemNote {
+        id: row.id,
+        problem_id: row.problem_id,
+        status: row.status,
+        title: row.title,
+        updated_at: row.updated_at.format("%Y-%m-%d").to_string(),
+        body: row.body.as_array().cloned().unwrap_or_default(),
+    }
+}
+
 fn to_comment(row: BlogCommentRow) -> BlogComment {
     BlogComment {
         id: row.id,
@@ -812,6 +1103,32 @@ fn clean_anonymous_key(value: &str) -> Result<String, ApiError> {
         ));
     }
     Ok(key.to_string())
+}
+
+fn clean_problem_id(value: &str) -> Result<String, ApiError> {
+    let problem_id = value.trim();
+    let valid = !problem_id.is_empty()
+        && problem_id.len() <= 120
+        && problem_id
+            .chars()
+            .all(|item| item.is_ascii_alphanumeric() || matches!(item, '-' | '_'));
+    if !valid {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "invalid_problem_id"));
+    }
+    Ok(problem_id.to_string())
+}
+
+fn validate_algo_note_input(input: &AlgoNoteInput) -> Result<(), ApiError> {
+    if !matches!(input.status.as_str(), "draft" | "published") {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "invalid_status"));
+    }
+    if input.title.trim().is_empty() {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "title_required"));
+    }
+    if input.body.is_empty() {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "body_required"));
+    }
+    Ok(())
 }
 
 fn reaction_types() -> [&'static str; 4] {
@@ -1293,6 +1610,63 @@ mod tests {
                 .expect_err("short key should fail")
                 .code,
             "invalid_anonymous_key"
+        );
+    }
+
+    #[test]
+    fn validates_algo_problem_ids() {
+        assert_eq!(clean_problem_id("two-sum").unwrap(), "two-sum");
+        assert_eq!(clean_problem_id("valid_bst_98").unwrap(), "valid_bst_98");
+        assert_eq!(
+            clean_problem_id("../secret")
+                .expect_err("path-like id should fail")
+                .code,
+            "invalid_problem_id"
+        );
+    }
+
+    #[test]
+    fn validates_algo_note_input() {
+        let valid = AlgoNoteInput {
+            status: "published".to_string(),
+            title: "Two Sum note".to_string(),
+            body: vec![json!({ "kind": "paragraph", "text": "Hash map invariant" })],
+        };
+        assert!(validate_algo_note_input(&valid).is_ok());
+
+        let invalid_status = AlgoNoteInput {
+            status: "archived".to_string(),
+            title: valid.title.clone(),
+            body: valid.body.clone(),
+        };
+        let blank_title = AlgoNoteInput {
+            status: valid.status.clone(),
+            title: " ".to_string(),
+            body: valid.body.clone(),
+        };
+        let empty_body = AlgoNoteInput {
+            status: valid.status,
+            title: valid.title,
+            body: Vec::new(),
+        };
+
+        assert_eq!(
+            validate_algo_note_input(&invalid_status)
+                .expect_err("invalid status should fail")
+                .code,
+            "invalid_status"
+        );
+        assert_eq!(
+            validate_algo_note_input(&blank_title)
+                .expect_err("blank title should fail")
+                .code,
+            "title_required"
+        );
+        assert_eq!(
+            validate_algo_note_input(&empty_body)
+                .expect_err("empty body should fail")
+                .code,
+            "body_required"
         );
     }
 

@@ -24,10 +24,10 @@ Public architecture snapshot for the ExactlyOne website.
 - `src/problemBank.ts`: problem catalog data.
 - `src/search.ts`: tutorial search helpers.
 - `src/App.css` and `src/index.css`: visual design.
-- `server/`: Rust blog API, admin auth, public interactions, migrations, seed
+- `server/`: Rust API, admin auth, public interactions, migrations, seed
   script, media upload, PostgreSQL access, and production static file serving.
-- `server/migrations/`: SQL migrations for content, owner security, comments,
-  and reactions.
+- `server/migrations/`: SQL migrations for Blog content, owner security, Blog
+  interactions, Algo notes, and Algo interactions.
 - `docker-compose.blog.yml`: local PostgreSQL service for blog development.
 - `Dockerfile`: Cloud Run image that builds the frontend and runs the Rust
   server as the public/API entrypoint.
@@ -63,23 +63,26 @@ Public architecture snapshot for the ExactlyOne website.
 - Variable timeline.
 - Visualizers for arrays, linked lists, trees, and stacks.
 - Full-width complete solutions with C++, Java, and JavaScript tabs.
+- Algo Lab personal-note surface per problem, backed by `problem_id`.
+- Algo Lab public comments and reactions per problem.
 - Personal blog section with a published-only data layer, search, category/tag
   filters, article metadata, reading view, heading table of contents, and empty
   states.
 - Blog admin page with login, optional TOTP login code, post list,
   draft/published editor, Markdown-like authoring, live preview, save, delete,
   password change, and TOTP setup/disable controls.
-- Blog API with published post reads, admin login, draft/published CRUD,
-  public comments, public reactions, password change, optional TOTP
-  verification, migration runner, admin seed script, media upload boundary, and
-  backup script.
+- API with published Blog reads, admin login, draft/published Blog CRUD, Algo
+  note admin endpoints, public comments, public reactions, password change,
+  optional TOTP verification, migration runner, admin seed script, media upload
+  boundary, and backup script.
 
 ## Planned Integration Surfaces
 
 - Blog: homepage, owner-managed posts, password change, optional TOTP, public
   comments/reactions, and future moderation tools.
 - Algo Lab: tutorial section, personal notes per problem, public replies,
-  reactions, track hierarchy, and full-width complete solutions.
+  reactions, track hierarchy, and full-width complete solutions. Admin note UI
+  and moderation tools are still planned.
 - Helios: public research page and future authenticated operational dashboards
   sourced from `/Users/cash/work_space/private/Helios`.
 - Easy DB: database tooling page sourced from

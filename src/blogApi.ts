@@ -43,6 +43,20 @@ export type BlogInteractions = {
   reactions: BlogReactionSummary[]
 }
 
+export type AlgoProblemNote = {
+  id: string
+  problemId: string
+  status: BlogStatus
+  title: string
+  updatedAt: string
+  body: BlogPost['body']
+}
+
+export type AlgoProblemOutput = {
+  note?: AlgoProblemNote | null
+  interactions: BlogInteractions
+}
+
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...init,
@@ -80,6 +94,25 @@ export async function createBlogComment(slug: string, displayName: string, body:
 
 export async function createBlogReaction(slug: string, reactionType: BlogReactionType, anonymousKey: string) {
   return requestJson<BlogInteractions>(`/api/blog/posts/${encodeURIComponent(slug)}/reactions`, {
+    method: 'POST',
+    body: JSON.stringify({ reactionType, anonymousKey }),
+  })
+}
+
+export async function fetchAlgoProblemNote(problemId: string, anonymousKey: string) {
+  const params = new URLSearchParams({ anonymousKey })
+  return requestJson<AlgoProblemOutput>(`/api/algo/problems/${encodeURIComponent(problemId)}/note?${params}`)
+}
+
+export async function createAlgoComment(problemId: string, displayName: string, body: string) {
+  return requestJson<BlogInteractions>(`/api/algo/problems/${encodeURIComponent(problemId)}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ displayName, body }),
+  })
+}
+
+export async function createAlgoReaction(problemId: string, reactionType: BlogReactionType, anonymousKey: string) {
+  return requestJson<BlogInteractions>(`/api/algo/problems/${encodeURIComponent(problemId)}/reactions`, {
     method: 'POST',
     body: JSON.stringify({ reactionType, anonymousKey }),
   })

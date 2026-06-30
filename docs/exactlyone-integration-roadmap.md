@@ -103,13 +103,16 @@ Current state:
 - Dry-run steps.
 - Variable state and timeline.
 - Full-width complete solutions.
+- Personal-note table and public note read endpoint keyed by `problem_id`.
+- Public comments and reactions keyed by `problem_id`.
+- Admin API endpoints exist for listing, upserting, and deleting problem notes.
 
 Next requirements:
 
-- Personal notes per problem.
+- Admin UI for editing problem notes.
 - Track hierarchy such as `Algo > Blind 75`, `Algo > Top 150`, and
   rank-point-based selection.
-- Public comments and reactions for problem notes.
+- Moderation and rate limiting for problem comments/reactions.
 
 ### Helios
 
@@ -202,8 +205,10 @@ Status: partially implemented.
 
 - Existing Algo Lab is present.
 - Complete solutions now render as an independent full-width section.
+- Personal notes, public comments, and reactions have database/API foundations.
+- Public Algo lesson pages render the personal-note surface and interaction UI.
 - Browser screenshot review passed for the expanded complete-solution layout.
-- Needs personal notes, comment/reaction integration, and track hierarchy.
+- Needs admin note editor UI, moderation, rate limiting, and track hierarchy.
 
 ### M4: Easy DB Integration
 
@@ -234,8 +239,8 @@ Status: partially designed.
 
 ## Next Action Queue
 
-1. Add moderation tools and rate limiting for public Blog interactions.
-2. Add personal notes and interaction reuse for Algo Lab problems.
+1. Add moderation tools and rate limiting for public Blog and Algo interactions.
+2. Add Admin UI for Algo problem notes.
 3. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
    reimplementation.
 4. Add Helios read-only status proof before live operations.
@@ -274,6 +279,10 @@ Status: partially designed.
 - Added blog editor support for inline Markdown links and video blocks.
 - Added public blog comments and reactions with PostgreSQL migration
   `003_blog_interactions.sql`, published-post-only API routes, and article-page
+  UI.
+- Added Algo Lab problem-note and interaction data model with PostgreSQL
+  migration `004_algo_notes_interactions.sql`, public problem note/comment/
+  reaction API routes, admin note API routes, and lesson-page note/interaction
   UI.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and

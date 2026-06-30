@@ -4,17 +4,21 @@ import { blogCategories, blogTags, publishedBlogPosts, searchBlogPosts, type Blo
 import {
   adminLogin,
   changeAdminPassword,
+  createAlgoComment,
+  createAlgoReaction,
   createBlogComment,
   createBlogReaction,
   deleteAdminPost,
   disableAdminTotp,
   enableAdminTotp,
+  fetchAlgoProblemNote,
   fetchBlogInteractions,
   fetchAdminPosts,
   fetchAdminSecurity,
   fetchPublishedPosts,
   saveAdminPost,
   setupAdminTotp,
+  type AlgoProblemNote,
   type AdminSecurity,
   type BlogInteractions,
   type BlogPostPayload,
@@ -599,8 +603,12 @@ function BlogToc({ post }: { post: BlogPost }) {
 }
 
 function BlogBody({ post }: { post: BlogPost }) {
+  return <ContentBlocks body={post.body} />
+}
+
+function ContentBlocks({ body }: { body: BlogPost['body'] }) {
   return <div className="blog-body">
-    {post.body.map((block, index) => {
+    {body.map((block, index) => {
       if (block.kind === 'heading') return <h3 id={`blog-section-${index}`} key={index}>{block.text}</h3>
       if (block.kind === 'list') return <ul key={index}>{block.items.map(item => <li key={item}>{renderInlineMarkdown(item)}</li>)}</ul>
       if (block.kind === 'code') return <pre key={index}><code>{block.code}</code></pre>
@@ -609,6 +617,22 @@ function BlogBody({ post }: { post: BlogPost }) {
       return <p key={index}>{renderInlineMarkdown(block.text)}</p>
     })}
   </div>
+}
+
+function AlgoNotePanel({ note }: { note?: AlgoProblemNote | null }) {
+  return <section className="algo-note">
+    <div className="algo-note-head">
+      <span>PERSONAL NOTE</span>
+      {note && <b>Updated {note.updatedAt}</b>}
+    </div>
+    {note ? <>
+      <h3>{note.title}</h3>
+      <ContentBlocks body={note.body} />
+    </> : <>
+      <h3>個人筆記</h3>
+      <p>這題的筆記尚未公開。</p>
+    </>}
+  </section>
 }
 
 function BlogInteractionsPanel({
@@ -834,6 +858,14 @@ function App() {
   const [query, setQuery] = useState('')
   const [solutionOpen, setSolutionOpen] = useState(false)
   const [solutionLanguage, setSolutionLanguage] = useState<SolutionLanguage>('cpp')
+  const [anonymousKey] = useState(blogAnonymousKey)
+  const [algoNote, setAlgoNote] = useState<AlgoProblemNote | null>(null)
+  const [algoInteractions, setAlgoInteractions] = useState<BlogInteractions>(emptyInteractions)
+  const [algoCommentName, setAlgoCommentName] = useState('')
+  const [algoCommentBody, setAlgoCommentBody] = useState('')
+  const [submittingAlgoComment, setSubmittingAlgoComment] = useState(false)
+  const [submittingAlgoReaction, setSubmittingAlgoReaction] = useState<BlogReactionType | null>(null)
+  const [algoInteractionMessage, setAlgoInteractionMessage] = useState('')
 
   const allTags = useMemo(() => ['All', ...Array.from(new Set(tutorials.flatMap(t => t.tags))).sort()], [])
   const visibleTags = showAllTags ? allTags : primaryTags.filter(t => allTags.includes(t))
@@ -841,6 +873,22 @@ function App() {
   const filtered = tag === 'All' ? searched : searched.filter(t => t.tags.includes(tag))
   const tutorial = tutorials.find(t => t.id === selectedId) ?? filtered[0] ?? tutorials[0]
   const step = tutorial.steps[stepIndex] ?? tutorial.steps[0]
+
+  useEffect(() => {
+    let alive = true
+    fetchAlgoProblemNote(tutorial.id, anonymousKey)
+      .then(output => {
+        if (!alive) return
+        setAlgoNote(output.note ?? null)
+        setAlgoInteractions(output.interactions)
+      })
+      .catch(() => {
+        if (!alive) return
+        setAlgoNote(null)
+        setAlgoInteractions(emptyInteractions)
+      })
+    return () => { alive = false }
+  }, [anonymousKey, tutorial.id])
 
   const choose = (id: string) => { setSelectedId(id); setStepIndex(0); setSolutionOpen(false) }
   const chooseTag = (nextTag: string) => {
@@ -859,6 +907,39 @@ function App() {
     setSolutionOpen(false)
   }
 
+  const submitAlgoComment = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!algoCommentBody.trim()) return
+    setSubmittingAlgoComment(true)
+    setAlgoInteractionMessage('')
+    try {
+      await createAlgoComment(tutorial.id, algoCommentName, algoCommentBody)
+      const output = await fetchAlgoProblemNote(tutorial.id, anonymousKey)
+      setAlgoNote(output.note ?? null)
+      setAlgoInteractions(output.interactions)
+      setAlgoCommentBody('')
+      setAlgoInteractionMessage('留言已送出')
+    } catch {
+      setAlgoInteractionMessage('留言送出失敗，請稍後再試')
+    } finally {
+      setSubmittingAlgoComment(false)
+    }
+  }
+
+  const chooseAlgoReaction = async (reactionType: BlogReactionType) => {
+    if (submittingAlgoReaction) return
+    setSubmittingAlgoReaction(reactionType)
+    setAlgoInteractionMessage('')
+    try {
+      const nextInteractions = await createAlgoReaction(tutorial.id, reactionType, anonymousKey)
+      setAlgoInteractions(nextInteractions)
+    } catch {
+      setAlgoInteractionMessage('反應送出失敗，請稍後再試')
+    } finally {
+      setSubmittingAlgoReaction(null)
+    }
+  }
+
   const renderSection = () => {
     if (section === 'home') return <ProjectHub onSelect={setSection} />
     if (section === 'helios') return <HeliosSection />
@@ -874,6 +955,19 @@ function App() {
         <div className="dryrun"><div className="step-panel"><div className="step-top"><span>Step {stepIndex + 1}/{tutorial.steps.length}</span><h3>{step.title}</h3><p>{step.explain}</p></div><Visualizer step={step} /><div className="controls"><button onClick={() => setStepIndex(Math.max(0, stepIndex - 1))} disabled={stepIndex === 0}>← 上一步</button><button onClick={() => setStepIndex(Math.min(tutorial.steps.length - 1, stepIndex + 1))} disabled={stepIndex === tutorial.steps.length - 1}>下一步 →</button></div></div>
           <div className="state-panel"><h3>當前變數</h3><div className="vars">{Object.entries(step.variables).map(([k, v]) => <div key={k}><span>{k}</span><b>{String(v)}</b></div>)}</div><VariableTimeline steps={tutorial.steps} activeIndex={stepIndex} /><h3>目前步驟對應程式碼</h3><pre>{tutorial.code.map(line => <code key={line} className={line === step.codeLine ? 'line active' : 'line'}>{line}</code>)}</pre></div></div>
         <Solutions tutorial={tutorial} open={solutionOpen} language={solutionLanguage} onToggle={() => setSolutionOpen(!solutionOpen)} onLanguage={setSolutionLanguage} />
+        <AlgoNotePanel note={algoNote} />
+        <BlogInteractionsPanel
+          interactions={algoInteractions}
+          commentName={algoCommentName}
+          commentBody={algoCommentBody}
+          message={algoInteractionMessage}
+          submittingComment={submittingAlgoComment}
+          submittingReaction={submittingAlgoReaction}
+          onCommentNameChange={setAlgoCommentName}
+          onCommentBodyChange={setAlgoCommentBody}
+          onSubmitComment={submitAlgoComment}
+          onReact={chooseAlgoReaction}
+        />
       </article></section>
     </>
   }
