@@ -273,6 +273,8 @@ Status: partially implemented.
 - Easy PG schema-to-platform sanitizer exists with allow-list protection.
 - Local Easy PG import workflow exists through `.platform-local/` and
   `npm run import:easy-pg-schema`.
+- Local Easy PG schema exports can be inspected before allow-list selection
+  through `npm run inspect:easy-pg-schema`.
 - Platform export review/promote workflow exists for local candidate bundles.
 - Platform export review now flags likely regressions before promotion, such as
   removed Helios signals/datasets or reduced Easy DB schema coverage.
@@ -396,6 +398,8 @@ Status: partially implemented.
   protection.
 - Added and locally verified the git-ignored Easy PG import workflow using a
   real source export and local allow-list.
+- Added local Easy PG schema export inspection for table counts, allow-list
+  matches, and sensitive-name hints before candidate generation.
 - Added the Helios status-to-platform sanitizer and local import workflow.
 - Added candidate review/promote tooling for platform exports.
 - Added an owner-only Platform admin workbench that summarizes the current

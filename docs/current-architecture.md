@@ -60,6 +60,9 @@ Public architecture snapshot for the ExactlyOne website.
 - `scripts/easy-pg-schema-to-platform-export.mjs`: converts Easy PG schema
   exports into the platform export bundle using an explicit public table
   allow-list or git-ignored local allow-list file.
+- `scripts/inspect-easy-pg-schema-export.mjs`: summarizes local Easy PG schema
+  exports before allow-list selection, including table counts and
+  sensitive-name hints.
 - `scripts/helios-status-to-platform-export.mjs`: converts curated Helios
   public status summaries into the platform export bundle.
 - `docs/blog-content-system.md`: public-safe local content-system workflow.
@@ -103,7 +106,8 @@ Public architecture snapshot for the ExactlyOne website.
 - Easy PG source schema exports must pass the Easy PG sanitizer and explicit
   table allow-list before they can update the public bundle. Local source
   exports and allow-list files live under `.platform-local/`, which is ignored
-  by git.
+  by git. Inspect local schema exports with `npm run inspect:easy-pg-schema`
+  before producing a candidate bundle.
 - Source-derived Helios/Easy DB changes should first produce a local candidate
   bundle, then pass review/promote before changing `src/platformExports.generated.json`.
   Candidate promotion refuses likely public export regressions unless the

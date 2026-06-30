@@ -115,12 +115,16 @@ For a real local import, keep both the source export and allow-list outside git:
 mkdir -p .platform-local
 cp easy-pg-schema-export.json .platform-local/easy-pg-schema.local.json
 printf '%s\n' public.users public.projects > .platform-local/easy-pg-public-tables.local.txt
+npm run inspect:easy-pg-schema
 npm run import:easy-pg-schema
 npm run check:platform-exports
 npm run review:platform-export
 ```
 
 `.platform-local/`, `*.local.json`, and `*.local.txt` are ignored by git.
+`npm run inspect:easy-pg-schema` summarizes table counts, allow-list matches,
+missing allow-list entries, and sensitive-name hints before a candidate bundle
+is produced.
 
 Running the tool without arguments validates the current generated export:
 

@@ -81,6 +81,8 @@ This file is a public-safe product record.
   public platform bundle only through an explicit table allow-list.
 - Added and verified the git-ignored local Easy PG import workflow for
   source-derived schema exports.
+- Added Easy PG schema export inspection for allow-list review before
+  source-derived candidate generation.
 - Added a Helios status sanitizer that converts curated local status summaries
   into the public platform bundle.
 - Added local candidate review and promote tooling for platform export changes.
