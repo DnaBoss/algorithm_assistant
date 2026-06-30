@@ -69,6 +69,8 @@ Adapter boundary rule:
   scattered into the frontend.
 - Public data must pass through the export contracts in
   [platform-export-contracts.md](platform-export-contracts.md).
+- Candidate export bundles must pass `npm run check:platform-exports` before
+  they are committed into `src/platformExports.generated.json`.
 
 ## Data Domains
 
@@ -139,7 +141,8 @@ Integration plan:
   cards exist in this branch.
 - Phase 2: read-only dashboard cards sourced from exported/status JSON, such as
   ingestion state and research notes. The first public status export contract
-  exists with schema version, export date, signals, and dataset coverage cards.
+  exists with schema version, export date, signals, dataset coverage cards, and
+  an import gate.
 - Phase 3: authenticated operational dashboard for market-data collection
   state.
 - Phase 4: deliberate API adapter if Helios services should be queried live.
@@ -170,7 +173,8 @@ Integration plan:
 - Phase 2: embed or reimplement the public landing and schema-view workflow in
   ExactlyOne using sanitized exports from Easy PG. The first public schema
   export contract exists with schema version, source label, safety rules, and
-  sanitized table metadata.
+  sanitized table metadata. An import gate now validates generated public
+  export bundles before release.
 - Phase 3: authenticated connection-profile management and live schema export.
 - Phase 4: safe query notes and export-to-post workflow.
 
@@ -244,6 +248,7 @@ Status: partially implemented.
 - Source Easy PG capabilities were reviewed: profiles, SSH tunnel, schema
   snapshot, column search, SQL import, and schema export.
 - Public Easy DB schema export contract exists and feeds the schema browser.
+- Generated platform export bundle exists and is validated by release gate.
 - Need decide whether live private operations use iframe, reverse proxy, shared
   Rust module, or reimplementation.
 - Needs authenticated admin-only operations.
@@ -256,6 +261,7 @@ Status: partially implemented.
   research lanes, pipeline stages, research gates, and private-operation
   boundaries.
 - Public Helios status export contract exists and feeds the status cards.
+- Generated platform export bundle exists and is validated by release gate.
 - Define private operational dashboard.
 - Generate a sanitized status export from Helios into this contract.
 - Choose export-file, API adapter, or database read model after the export
@@ -275,8 +281,9 @@ Status: partially implemented.
 
 ## Next Action Queue
 
-1. Generate the first sanitized Easy DB export from Easy PG.
-2. Generate the first sanitized Helios status export from Helios.
+1. Generate the first source-derived sanitized Easy DB export from Easy PG.
+2. Generate the first source-derived sanitized Helios status export from
+   Helios.
 3. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
    reimplementation.
 4. Decide whether this verified platform slice should deploy before the next
@@ -338,6 +345,8 @@ Status: partially implemented.
 - Added first server-side public interaction rate limiting for Blog and Algo
   comments/reactions.
 - Added public export contracts for Helios status and Easy DB schema data.
+- Added the generated platform export bundle and release-gate validation for
+  Helios/Easy DB public exports.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

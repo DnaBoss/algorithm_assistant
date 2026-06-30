@@ -1,3 +1,5 @@
+import platformExports from './platformExports.generated.json'
+
 export type HeliosMetric = {
   label: string
   value: string
@@ -38,48 +40,7 @@ export type HeliosPipelineStage = {
   detail: string
 }
 
-export const heliosStatusExport: HeliosStatusExport = {
-  schemaVersion: 1,
-  source: 'helios-public-status',
-  exportedAt: '2026-06-30',
-  signals: [
-    {
-      label: 'Engine',
-      value: 'complete',
-      detail: 'Event pipeline, risk checks, execution simulation, portfolio state, and observability are implemented.',
-    },
-    {
-      label: 'Platform',
-      value: 'building',
-      detail: 'Broker adapters, database layer, auth, crawler, API, and React UI are being integrated in stages.',
-    },
-    {
-      label: 'Data gate',
-      value: 'strict',
-      detail: 'Research is gated by validated 1m K-line completeness and explicit session rules.',
-    },
-  ],
-  datasets: [
-    {
-      name: 'Taiwan equity 1m bars',
-      coverage: 'collection-state export pending',
-      cadence: 'market sessions',
-      gate: 'session-aware completeness check',
-    },
-    {
-      name: 'Index futures research bars',
-      coverage: 'TXF / MTX / MXF separated',
-      cadence: 'intraday sessions',
-      gate: 'roll calendar and contract-cost validation',
-    },
-    {
-      name: 'Strategy candidates',
-      coverage: 'research-only summaries',
-      cadence: 'manual promotion',
-      gate: 'benchmark, slippage, and stability review',
-    },
-  ],
-}
+export const heliosStatusExport = platformExports.heliosStatusExport as HeliosStatusExport
 
 export const heliosMetrics: HeliosMetric[] = heliosStatusExport.signals.map(signal => ({
   label: signal.label,

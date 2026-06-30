@@ -1,3 +1,5 @@
+import platformExports from './platformExports.generated.json'
+
 export type EasyDbColumn = {
   name: string
   type: string
@@ -62,54 +64,7 @@ export const easyDbWorkflow = [
   'Promote useful query notes into Blog or Easy DB articles.',
 ]
 
-export const easyDbPublicSchemaExport: EasyDbSchemaExport = {
-  schemaVersion: 1,
-  source: 'easy-db-public-schema',
-  exportedAt: '2026-06-30',
-  sourceLabel: 'sanitized Easy PG export',
-  safety: [
-    'No hostnames, credentials, SSH tunnel details, table data, or row samples.',
-    'Only schema names, table names, column metadata, relationship hints, and notes are public.',
-    'Real connection profiles remain owner-only.',
-  ],
-  tables: [
-    {
-      schema: 'public',
-      name: 'users',
-      purpose: 'Account identity and profile entry point.',
-      columns: [
-        { name: 'id', type: 'uuid', nullable: false, primary: true, note: 'Stable account id.' },
-        { name: 'email', type: 'text', nullable: false, note: 'Login and contact address.' },
-        { name: 'display_name', type: 'text', nullable: false, note: 'Public-facing name.' },
-        { name: 'created_at', type: 'timestamptz', nullable: false, note: 'Creation timestamp.' },
-      ],
-    },
-    {
-      schema: 'public',
-      name: 'projects',
-      purpose: 'Owned workspaces, experiments, or products.',
-      columns: [
-        { name: 'id', type: 'uuid', nullable: false, primary: true, note: 'Stable project id.' },
-        { name: 'owner_id', type: 'uuid', nullable: false, foreign: { table: 'users', column: 'id' }, note: 'Project owner.' },
-        { name: 'name', type: 'text', nullable: false, note: 'Project display name.' },
-        { name: 'status', type: 'text', nullable: false, note: 'Draft, active, archived, or similar lifecycle state.' },
-        { name: 'updated_at', type: 'timestamptz', nullable: false, note: 'Last update timestamp.' },
-      ],
-    },
-    {
-      schema: 'public',
-      name: 'project_notes',
-      purpose: 'Notes attached to a project or research thread.',
-      columns: [
-        { name: 'id', type: 'uuid', nullable: false, primary: true, note: 'Stable note id.' },
-        { name: 'project_id', type: 'uuid', nullable: false, foreign: { table: 'projects', column: 'id' }, note: 'Parent project.' },
-        { name: 'title', type: 'text', nullable: false, note: 'Short note title.' },
-        { name: 'body', type: 'jsonb', nullable: false, note: 'Structured content blocks.' },
-        { name: 'published_at', type: 'timestamptz', nullable: true, note: 'Null means private draft.' },
-      ],
-    },
-  ],
-}
+export const easyDbPublicSchemaExport = platformExports.easyDbPublicSchemaExport as EasyDbSchemaExport
 
 export const easyDbExampleSchema: EasyDbTable[] = easyDbPublicSchemaExport.tables
 

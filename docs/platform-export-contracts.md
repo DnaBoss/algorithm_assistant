@@ -3,6 +3,10 @@
 ExactlyOne can show public data from Helios and Easy DB only after the data is
 converted into a safe export shape.
 
+Current frontend bundle: `src/platformExports.generated.json`.
+
+Import and validation tool: `scripts/import-platform-exports.mjs`.
+
 ## Shared Rules
 
 - Exports are read-only inputs for the public site.
@@ -12,6 +16,8 @@ converted into a safe export shape.
   shapes before public release.
 - Source systems keep operational logic. ExactlyOne owns public rendering,
   access boundaries, and published copy.
+- A candidate bundle must include both `heliosStatusExport` and
+  `easyDbPublicSchemaExport`.
 
 ## Helios Public Status
 
@@ -82,3 +88,15 @@ Not allowed:
 `npm run release:gate` remains the pre-release gate. It runs public leak scans,
 frontend tests, API tests, frontend build, and API check before any manual
 deployment.
+
+Use the import tool before moving a candidate source export into the frontend:
+
+```bash
+node scripts/import-platform-exports.mjs candidate-platform-export.json src/platformExports.generated.json
+```
+
+Running the tool without arguments validates the current generated export:
+
+```bash
+npm run check:platform-exports
+```
