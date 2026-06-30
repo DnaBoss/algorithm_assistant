@@ -20,6 +20,11 @@ describe('platform progress data', () => {
     expect(algoLab?.completed).toEqual(expect.arrayContaining(['Track hierarchy', 'Rating selection']))
   })
 
+  it('records the first public interaction rate-limit slice', () => {
+    expect(corePlatformAreas.find(area => area.id === 'blog')?.completed).toContain('Public rate limit')
+    expect(corePlatformAreas.find(area => area.id === 'algoLab')?.completed).toContain('Public rate limit')
+  })
+
   it('keeps production release cadence explicit', () => {
     expect(releaseRhythm.status).toBe('batch verified slices')
     expect(releaseRhythm.summary).toContain('coherent feature slices')

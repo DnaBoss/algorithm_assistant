@@ -88,11 +88,12 @@ Current security and interaction state:
 - Optional TOTP for owner login exists.
 - Comment and reaction tables exist.
 - Public comment and reaction APIs exist for published posts.
+- First server-side public interaction rate limit exists for comments and
+  reactions.
 
 Next requirements:
 
 - Public-safe moderation tools.
-- Rate limiting / abuse controls.
 - Better Markdown rendering and image handling.
 
 ### Algo Lab
@@ -107,6 +108,8 @@ Current state:
 - Full-width complete solutions.
 - Personal-note table and public note read endpoint keyed by `problem_id`.
 - Public comments and reactions keyed by `problem_id`.
+- First server-side public interaction rate limit exists for comments and
+  reactions.
 - Admin API endpoints exist for listing, upserting, and deleting problem notes.
 - Admin UI exists for editing, previewing, publishing, and deleting problem
   notes.
@@ -114,7 +117,7 @@ Current state:
 Next requirements:
 
 - Deeper per-track study plans, progress markers, and recommended order.
-- Moderation and rate limiting for problem comments/reactions.
+- Moderation tools for problem comments/reactions.
 
 ### Helios
 
@@ -205,7 +208,8 @@ Status: partially implemented.
 - Owner password change API and admin UI exist.
 - Optional TOTP setup, enable, disable, and login verification exist.
 - Public comments and reactions exist for published blog posts.
-- Moderation and rate-limiting boundary remains.
+- First server-side public interaction rate limit exists.
+- Moderation boundary remains.
 
 ### M3: Algo Lab Integration
 
@@ -216,11 +220,13 @@ Status: partially implemented.
   category index, and multi-tag index pages.
 - Complete solutions now render as an independent full-width section.
 - Personal notes, public comments, and reactions have database/API foundations.
+- First server-side public interaction rate limit exists for Algo comments and
+  reactions.
 - Public Algo lesson pages render the personal-note surface and interaction UI.
 - Admin page includes a first problem-note editor with title, status, Markdown
   body, preview, save, and delete.
 - Browser screenshot review passed for the expanded complete-solution layout.
-- Needs moderation, rate limiting, and deeper per-track study plans.
+- Needs moderation tools and deeper per-track study plans.
 
 ### M4: Easy DB Integration
 
@@ -259,7 +265,7 @@ Status: partially implemented.
 
 ## Next Action Queue
 
-1. Add moderation tools and rate limiting for public Blog and Algo interactions.
+1. Add moderation tools for public Blog and Algo interactions.
 2. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
    reimplementation.
 3. Add Helios read-only status proof before live operations.
@@ -319,6 +325,8 @@ Status: partially implemented.
   build, and API check.
 - Added Algo Lab track hierarchy pages for Blind 75, Top 150, rating-based
   practice, category index, and multi-tag index.
+- Added first server-side public interaction rate limiting for Blog and Algo
+  comments/reactions.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

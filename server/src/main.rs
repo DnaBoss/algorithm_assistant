@@ -1,4 +1,11 @@
-use std::{collections::HashSet, env, net::SocketAddr, path::PathBuf};
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    env,
+    net::SocketAddr,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
 
 use anyhow::{Context, Result};
 use argon2::{
@@ -33,6 +40,55 @@ struct AppState {
     jwt_secret: String,
     media_dir: PathBuf,
     media_public_path: String,
+    public_rate_limiter: PublicRateLimiter,
+}
+
+#[derive(Clone)]
+struct PublicRateLimiter {
+    buckets: Arc<Mutex<HashMap<String, VecDeque<Instant>>>>,
+}
+
+#[derive(Clone, Copy)]
+struct RateLimitRule {
+    max_events: usize,
+    window: Duration,
+}
+
+impl PublicRateLimiter {
+    fn new() -> Self {
+        Self {
+            buckets: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
+    fn check(&self, key: String, rule: RateLimitRule) -> Result<(), ApiError> {
+        self.check_at(key, rule, Instant::now())
+    }
+
+    fn check_at(&self, key: String, rule: RateLimitRule, now: Instant) -> Result<(), ApiError> {
+        let mut buckets = self
+            .buckets
+            .lock()
+            .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+        let bucket = buckets.entry(key).or_default();
+        while let Some(oldest) = bucket.front() {
+            if now.duration_since(*oldest) <= rule.window {
+                break;
+            }
+            bucket.pop_front();
+        }
+        if bucket.len() >= rule.max_events {
+            return Err(ApiError::new(
+                StatusCode::TOO_MANY_REQUESTS,
+                "public_rate_limited",
+            ));
+        }
+        bucket.push_back(now);
+        if buckets.len() > 5_000 {
+            buckets.retain(|_, events| !events.is_empty());
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -339,6 +395,7 @@ async fn serve(config: Config, pool: PgPool) -> Result<()> {
         jwt_secret: config.jwt_secret,
         media_dir: config.media_dir.clone(),
         media_public_path: config.media_public_path.clone(),
+        public_rate_limiter: PublicRateLimiter::new(),
     };
 
     let app = Router::new()
@@ -451,11 +508,16 @@ async fn get_post_interactions(
 async fn create_post_comment(
     State(state): State<AppState>,
     Path(slug): Path<String>,
+    headers: HeaderMap,
     Json(input): Json<BlogCommentInput>,
 ) -> Result<(StatusCode, Json<BlogInteractionsOutput>), ApiError> {
     let post_id = published_post_id(&state.pool, &slug).await?;
     let display_name = clean_display_name(input.display_name.as_deref())?;
     let body = clean_comment_body(&input.body)?;
+    state.public_rate_limiter.check(
+        public_rate_key("blog_comment", &slug, &client_fingerprint(&headers)),
+        comment_rate_limit(),
+    )?;
     sqlx::query("insert into blog_comments (post_id, display_name, body) values ($1, $2, $3)")
         .bind(post_id)
         .bind(display_name)
@@ -483,6 +545,10 @@ async fn create_post_reaction(
         ));
     }
     let anonymous_key = clean_anonymous_key(&input.anonymous_key)?;
+    state.public_rate_limiter.check(
+        public_rate_key("blog_reaction", &slug, &anonymous_key),
+        reaction_rate_limit(),
+    )?;
     sqlx::query(
         r#"
         insert into blog_reactions (post_id, reaction_type, anonymous_key)
@@ -529,11 +595,16 @@ async fn get_algo_problem_note(
 async fn create_algo_comment(
     State(state): State<AppState>,
     Path(problem_id): Path<String>,
+    headers: HeaderMap,
     Json(input): Json<BlogCommentInput>,
 ) -> Result<(StatusCode, Json<BlogInteractionsOutput>), ApiError> {
     let problem_id = clean_problem_id(&problem_id)?;
     let display_name = clean_display_name(input.display_name.as_deref())?;
     let body = clean_comment_body(&input.body)?;
+    state.public_rate_limiter.check(
+        public_rate_key("algo_comment", &problem_id, &client_fingerprint(&headers)),
+        comment_rate_limit(),
+    )?;
     sqlx::query("insert into algo_comments (problem_id, display_name, body) values ($1, $2, $3)")
         .bind(&problem_id)
         .bind(display_name)
@@ -561,6 +632,10 @@ async fn create_algo_reaction(
         ));
     }
     let anonymous_key = clean_anonymous_key(&input.anonymous_key)?;
+    state.public_rate_limiter.check(
+        public_rate_key("algo_reaction", &problem_id, &anonymous_key),
+        reaction_rate_limit(),
+    )?;
     sqlx::query(
         r#"
         insert into algo_reactions (problem_id, reaction_type, anonymous_key)
@@ -1118,6 +1193,39 @@ fn clean_problem_id(value: &str) -> Result<String, ApiError> {
     Ok(problem_id.to_string())
 }
 
+fn comment_rate_limit() -> RateLimitRule {
+    RateLimitRule {
+        max_events: 4,
+        window: Duration::from_secs(10 * 60),
+    }
+}
+
+fn reaction_rate_limit() -> RateLimitRule {
+    RateLimitRule {
+        max_events: 20,
+        window: Duration::from_secs(5 * 60),
+    }
+}
+
+fn public_rate_key(kind: &str, target: &str, actor: &str) -> String {
+    format!("{kind}:{target}:{actor}")
+}
+
+fn client_fingerprint(headers: &HeaderMap) -> String {
+    for header_name in ["x-forwarded-for", "x-real-ip", "cf-connecting-ip"] {
+        if let Some(value) = headers
+            .get(header_name)
+            .and_then(|value| value.to_str().ok())
+        {
+            let first = value.split(',').next().unwrap_or("").trim();
+            if !first.is_empty() {
+                return first.chars().take(80).collect();
+            }
+        }
+    }
+    "unknown-client".to_string()
+}
+
 fn validate_algo_note_input(input: &AlgoNoteInput) -> Result<(), ApiError> {
     if !matches!(input.status.as_str(), "draft" | "published") {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "invalid_status"));
@@ -1623,6 +1731,60 @@ mod tests {
                 .code,
             "invalid_problem_id"
         );
+    }
+
+    #[test]
+    fn rate_limiter_rejects_excess_public_events_and_recovers_after_window() {
+        let limiter = PublicRateLimiter::new();
+        let rule = RateLimitRule {
+            max_events: 2,
+            window: Duration::from_secs(60),
+        };
+        let now = Instant::now();
+
+        assert!(
+            limiter
+                .check_at("blog_comment:post:ip".to_string(), rule, now)
+                .is_ok()
+        );
+        assert!(
+            limiter
+                .check_at(
+                    "blog_comment:post:ip".to_string(),
+                    rule,
+                    now + Duration::from_secs(10)
+                )
+                .is_ok()
+        );
+        assert_eq!(
+            limiter
+                .check_at(
+                    "blog_comment:post:ip".to_string(),
+                    rule,
+                    now + Duration::from_secs(20)
+                )
+                .expect_err("third event inside window should be rejected")
+                .code,
+            "public_rate_limited"
+        );
+        assert!(
+            limiter
+                .check_at(
+                    "blog_comment:post:ip".to_string(),
+                    rule,
+                    now + Duration::from_secs(61)
+                )
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn extracts_client_fingerprint_from_proxy_headers() {
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-for", "203.0.113.7, 10.0.0.1".parse().unwrap());
+
+        assert_eq!(client_fingerprint(&headers), "203.0.113.7");
+        assert_eq!(client_fingerprint(&HeaderMap::new()), "unknown-client");
     }
 
     #[test]

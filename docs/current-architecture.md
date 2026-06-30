@@ -83,9 +83,9 @@ Public architecture snapshot for the ExactlyOne website.
   problem-note management, Markdown-like authoring, live preview, save, delete,
   password change, and TOTP setup/disable controls.
 - API with published Blog reads, admin login, draft/published Blog CRUD, Algo
-  note admin endpoints, public comments, public reactions, password change,
-  optional TOTP verification, migration runner, admin seed script, media upload
-  boundary, and backup script.
+  note admin endpoints, public comments, public reactions, public interaction
+  rate limiting, password change, optional TOTP verification, migration runner,
+  admin seed script, media upload boundary, and backup script.
 
 ## Planned Integration Surfaces
 

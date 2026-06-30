@@ -69,6 +69,8 @@ This file is a public-safe product record.
   build, and API check.
 - Added Algo Lab track hierarchy pages for Blind 75, Top 150, rating-based
   practice, category index, and multi-tag index.
+- Added first server-side public interaction rate limiting for Blog and Algo
+  comments/reactions.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

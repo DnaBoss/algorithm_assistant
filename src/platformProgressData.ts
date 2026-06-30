@@ -17,8 +17,8 @@ export const corePlatformAreas: PlatformProgress[] = [
     title: 'Blog',
     status: 'active foundation',
     publicSurface: 'Writing for study, work, research, side projects, and personal records.',
-    completed: ['Blog-first home', 'Owner editor', 'Comments and reactions'],
-    next: 'Moderation, richer media, and production content workflow.',
+    completed: ['Blog-first home', 'Owner editor', 'Comments and reactions', 'Public rate limit'],
+    next: 'Moderation tools, richer media, and production content workflow.',
   },
   {
     id: 'algoLab',
@@ -26,8 +26,8 @@ export const corePlatformAreas: PlatformProgress[] = [
     title: 'Algo Lab',
     status: 'learning surface',
     publicSurface: 'Algorithm notes, dry-runs, complete solutions, and per-problem discussion.',
-    completed: ['Searchable tutorials', 'Track hierarchy', 'Rating selection', 'Personal notes'],
-    next: 'Moderation, rate limits, and deeper per-track study plans.',
+    completed: ['Searchable tutorials', 'Track hierarchy', 'Rating selection', 'Public rate limit'],
+    next: 'Moderation tools and deeper per-track study plans.',
   },
   {
     id: 'helios',
