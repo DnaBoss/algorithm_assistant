@@ -24,6 +24,12 @@ if (options.jsonPath) {
   console.log(`Platform export review JSON: ${options.jsonPath}`)
 }
 
+if (options.historyPath) {
+  fs.mkdirSync(pathDirname(options.historyPath), { recursive: true })
+  fs.appendFileSync(options.historyPath, `${JSON.stringify(buildHistoryRecord(report, options))}\n`)
+  console.log(`Platform export review history: ${options.historyPath}`)
+}
+
 if (report.warnings.length > 0 && (options.failOnRegression || (options.promote && !options.allowRegression))) {
   console.error('Platform export review refused regression warnings. Pass --allow-regression only after deliberate review.')
   process.exit(1)
@@ -145,6 +151,19 @@ function printWarnings(warnings) {
   }
 }
 
+function buildHistoryRecord(report, options) {
+  return {
+    recordedAt: new Date().toISOString(),
+    candidatePath: options.candidatePath,
+    currentPath: options.currentPath,
+    promoteRequested: options.promote,
+    allowRegression: options.allowRegression,
+    failOnRegression: options.failOnRegression,
+    warningCount: report.warnings.length,
+    report,
+  }
+}
+
 function collectWarnings(report) {
   return [
     ...dateWarnings('Helios', report.helios.exportedAt),
@@ -187,6 +206,7 @@ function parseArgs(args) {
     candidatePath: DEFAULT_CANDIDATE,
     currentPath: DEFAULT_CURRENT,
     failOnRegression: false,
+    historyPath: '',
     jsonPath: '',
     promote: false,
     selfTest: false,
@@ -198,6 +218,9 @@ function parseArgs(args) {
       options.allowRegression = true
     } else if (arg === '--fail-on-regression') {
       options.failOnRegression = true
+    } else if (arg === '--history') {
+      options.historyPath = requireValue(arg, args[index + 1])
+      index += 1
     } else if (arg === '--json') {
       options.jsonPath = requireValue(arg, args[index + 1])
       index += 1

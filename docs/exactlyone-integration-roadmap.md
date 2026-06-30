@@ -75,6 +75,8 @@ Adapter boundary rule:
   `npm run review:platform-export` before they are promoted.
 - Candidate review can emit a git-ignored JSON report and refuses likely public
   export regressions by default during promotion.
+- Candidate review can append git-ignored local JSONL audit history for
+  source-export review decisions.
 - Helios public status summaries must pass
   `scripts/helios-status-to-platform-export.mjs` before they update the public
   Helios bundle.
@@ -267,6 +269,8 @@ Status: partially implemented.
 - Platform export review/promote workflow exists for local candidate bundles.
 - Platform export review now flags likely regressions before promotion, such as
   removed Helios signals/datasets or reduced Easy DB schema coverage.
+- Local platform export audit history can be appended for each Easy DB source
+  candidate review.
 - Owner admin has a Platform workbench showing the current generated Easy DB
   export date, table count, column count, and public table list.
 - Need decide whether live private operations use iframe, reverse proxy, shared
@@ -287,6 +291,8 @@ Status: partially implemented.
   export date, signal count, dataset count, and dataset gates.
 - Platform export review now catches candidates that would reduce the public
   Helios status surface before promotion.
+- Local platform export audit history can be appended for each Helios source
+  candidate review.
 - Define private operational dashboard.
 - Generate the first source-derived sanitized status export from Helios into
   this contract.
@@ -313,9 +319,7 @@ Status: partially implemented.
    Helios.
 3. Decide Easy DB adapter style: iframe, reverse proxy, shared Rust module, or
    reimplementation.
-4. Add owner-only export audit history after the first real source-derived
-   imports are promoted.
-5. Decide whether this verified platform slice should deploy before the next
+4. Decide whether this verified platform slice should deploy before the next
    integration slice.
 
 ## Progress Log
@@ -386,6 +390,9 @@ Status: partially implemented.
   generated Helios and Easy DB exports before deployment decisions.
 - Added machine-readable platform export review reports and default promotion
   protection against likely public export regressions.
+- Added local platform export review history so candidate decisions can be
+  tracked across Helios/Easy DB import attempts without publishing local source
+  context.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.
