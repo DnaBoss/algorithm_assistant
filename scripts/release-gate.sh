@@ -31,6 +31,9 @@ npm run check:platform-exports
 echo "==> npm run check:tracks"
 npm run check:tracks
 
+echo "==> npm run check:integration-tracking"
+npm run check:integration-tracking
+
 echo "==> npm run test"
 npm run test
 

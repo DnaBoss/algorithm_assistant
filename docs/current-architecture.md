@@ -44,6 +44,8 @@ Public architecture snapshot for the ExactlyOne website.
 - `scripts/deploy-gcp.sh`: local GCP deployment helper.
 - `scripts/release-gate.sh`: pre-deploy gate for branch hygiene, public leak
   scan, backup-helper presence, lint, tests, frontend build, and API check.
+- `scripts/check-integration-tracking.mjs`: verifies the core tracking docs and
+  package scripts continue to cover Blog, Algo Lab, Helios, and Easy DB.
 - `scripts/import-platform-exports.mjs`: validates and normalizes Helios/Easy
   DB public export bundles before they are committed to the frontend.
 - `scripts/review-platform-export.mjs`: validates a local candidate bundle,
@@ -106,6 +108,9 @@ Public architecture snapshot for the ExactlyOne website.
   reduction is explicitly accepted. Candidate review history can be appended
   locally through `npm run audit:platform-export` and summarized through
   `npm run status:platform-export`.
+- The release gate runs `npm run check:integration-tracking` so the roadmap,
+  architecture snapshot, product record, export contracts, and key tracking
+  scripts do not silently drift away from the four-area integration plan.
 - Algo Lab search and filtering.
 - Algo Lab track hierarchy with Blind 75, Top 150, rating-based practice,
   category index, and multi-tag index pages.

@@ -18,6 +18,7 @@
     "status:platform-export": "node scripts/summarize-platform-export-audit.mjs",
     "promote:platform-export": "node scripts/review-platform-export.mjs --promote",
     "check:tracks": "node scripts/check-track-pages.mjs",
+    "check:integration-tracking": "node scripts/check-integration-tracking.mjs",
     "release:gate": "bash scripts/release-gate.sh",
     "test": "npm run test:frontend && npm run test:api",
     "test:frontend": "vitest run",

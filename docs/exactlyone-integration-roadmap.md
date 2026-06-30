@@ -210,6 +210,8 @@ Status: in progress.
 - Keep product development record updated.
 - Keep the homepage platform progress surface aligned with the actual roadmap.
 - Preserve branch naming hygiene.
+- Keep `npm run check:integration-tracking` passing so the tracking docs keep
+  covering Blog, Algo Lab, Helios, and Easy DB.
 
 ### M1: Blog-First ExactlyOne Shell
 
@@ -308,8 +310,9 @@ Status: partially implemented.
 
 - Current branch includes Cloud Run artifacts.
 - `npm run release:gate` exists and verifies branch hygiene, public-file leak
-  candidates, backup-helper presence, lint, tests, frontend build, and API
-  check before any manual deploy.
+  candidates, backup-helper presence, platform exports, track pages, integration
+  tracking docs, lint, tests, frontend build, and API check before any manual
+  deploy.
 - Need decide whether production stays on VM/Nginx for now or moves to Cloud
   Run.
 - Need restore drill before storing important production content.
@@ -398,6 +401,8 @@ Status: partially implemented.
   context.
 - Added a local platform export status command that summarizes review history
   and the latest warning count.
+- Added an integration tracking gate so roadmap, architecture, product record,
+  export contracts, and package scripts stay aligned with the four core areas.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.
