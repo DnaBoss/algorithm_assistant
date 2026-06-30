@@ -81,19 +81,20 @@ Public architecture snapshot for the ExactlyOne website.
   states.
 - Admin page with login, optional TOTP login code, Blog post management, Algo
   problem-note management, Markdown-like authoring, live preview, save, delete,
-  password change, and TOTP setup/disable controls.
+  password change, TOTP setup/disable controls, and comment moderation.
 - API with published Blog reads, admin login, draft/published Blog CRUD, Algo
   note admin endpoints, public comments, public reactions, public interaction
-  rate limiting, password change, optional TOTP verification, migration runner,
-  admin seed script, media upload boundary, and backup script.
+  rate limiting, owner comment moderation, password change, optional TOTP
+  verification, migration runner, admin seed script, media upload boundary, and
+  backup script.
 
 ## Planned Integration Surfaces
 
 - Blog: homepage, owner-managed posts, password change, optional TOTP, public
-  comments/reactions, and future moderation tools.
+  comments/reactions, and owner moderation tools.
 - Algo Lab: tutorial section, personal notes per problem, public replies,
   reactions, admin note UI, track hierarchy, and full-width complete solutions.
-  Moderation tools are still planned.
+  Owner moderation tools exist for comments.
 - Helios: public research/status page sourced from sanitized Helios project
   knowledge, plus future authenticated operational dashboards.
 - Easy DB: database tooling page sourced from the Easy PG app, with public

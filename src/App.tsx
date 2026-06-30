@@ -14,6 +14,7 @@ import {
   enableAdminTotp,
   fetchAlgoProblemNote,
   fetchAdminAlgoNotes,
+  fetchAdminModerationComments,
   fetchBlogInteractions,
   fetchAdminPosts,
   fetchAdminSecurity,
@@ -21,12 +22,15 @@ import {
   saveAdminAlgoNote,
   saveAdminPost,
   setupAdminTotp,
+  updateAdminModerationComment,
   type AlgoNotePayload,
   type AlgoProblemNote,
   type AdminSecurity,
   type BlogInteractions,
   type BlogPostPayload,
   type BlogReactionType,
+  type ModerationComment,
+  type ModerationStatus,
   type TotpSetup,
 } from './blogApi'
 import { algoTracks, categorySummaries, loadRatedPracticeProblems, multiTagSummaries, tutorialsForTrack, type AlgoTrackId } from './algoTracksData'
@@ -422,7 +426,7 @@ const emptyAlgoNote: AlgoNotePayload = {
   body: [{ kind: 'paragraph', text: '' }],
 }
 
-type AdminView = 'blog' | 'algo'
+type AdminView = 'blog' | 'algo' | 'moderation'
 
 function AdminBlogSection() {
   const [token, setToken] = useState(() => localStorage.getItem('exactlyone_admin_token') ?? '')
@@ -432,6 +436,7 @@ function AdminBlogSection() {
   const [totpCode, setTotpCode] = useState('')
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [algoNotes, setAlgoNotes] = useState<AlgoProblemNote[]>([])
+  const [moderationComments, setModerationComments] = useState<ModerationComment[]>([])
   const [editingId, setEditingId] = useState<string | undefined>()
   const [draft, setDraft] = useState<BlogPostPayload>(emptyEditorPost)
   const [markdown, setMarkdown] = useState(blocksToMarkdown(emptyEditorPost.body))
@@ -487,12 +492,18 @@ function AdminBlogSection() {
     setSecurity(await fetchAdminSecurity(nextToken))
   }
 
+  const loadModeration = async (nextToken = token) => {
+    if (!nextToken) return
+    setModerationComments(await fetchAdminModerationComments(nextToken))
+  }
+
   useEffect(() => {
     if (!token) return undefined
     const timer = window.setTimeout(() => {
       loadPosts().catch(() => undefined)
       loadAlgoNotes().catch(() => undefined)
       loadSecurity().catch(() => undefined)
+      loadModeration().catch(() => undefined)
     }, 0)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -506,6 +517,7 @@ function AdminBlogSection() {
     await loadPosts(nextToken)
     await loadAlgoNotes(nextToken)
     await loadSecurity(nextToken)
+    await loadModeration(nextToken)
   }
 
   const changePassword = async () => {
@@ -639,6 +651,13 @@ function AdminBlogSection() {
     setMessage('Algo 筆記已刪除')
   }
 
+  const updateModerationStatus = async (item: ModerationComment, status: ModerationStatus) => {
+    setMessage('')
+    await updateAdminModerationComment(token, item.source, item.id, status)
+    await loadModeration()
+    setMessage(status === 'hidden' ? '留言已隱藏' : '留言已恢復')
+  }
+
   if (!token) return <section className="admin-shell">
     <div className="admin-panel">
       <p className="eyebrow">ADMIN</p>
@@ -663,6 +682,7 @@ function AdminBlogSection() {
       <div className="admin-tabs">
         <button className={adminView === 'blog' ? 'active' : ''} onClick={() => setAdminView('blog')}>Blog</button>
         <button className={adminView === 'algo' ? 'active' : ''} onClick={() => editAlgoNote(selectedAlgoProblemId)}>Algo</button>
+        <button className={adminView === 'moderation' ? 'active' : ''} onClick={() => { setAdminView('moderation'); loadModeration().catch(() => setMessage('留言載入失敗')) }}>Moderation</button>
       </div>
       {adminView === 'blog' && posts.map(post => <button key={post.id} className={editingId === post.id ? 'active' : ''} onClick={() => editPost(post)}>
         <span>{post.status}</span>
@@ -677,6 +697,14 @@ function AdminBlogSection() {
           <span>{note.status}</span>
           <b>{note.title || note.problemId}</b>
           <small>{note.problemId} · {note.updatedAt}</small>
+        </button>)}
+      </div>}
+      {adminView === 'moderation' && <div className="admin-note-list">
+        <small>{moderationComments.length} 則最近留言</small>
+        {moderationComments.slice(0, 12).map(item => <button key={`${item.source}-${item.id}`} className={item.status === 'hidden' ? 'muted' : ''} onClick={() => updateModerationStatus(item, item.status === 'published' ? 'hidden' : 'published').catch(error => setMessage(error instanceof Error ? error.message : '更新失敗'))}>
+          <span>{item.source} · {item.status}</span>
+          <b>{item.displayName}</b>
+          <small>{item.targetLabel} · {item.createdAt}</small>
         </button>)}
       </div>}
     </aside>
@@ -731,7 +759,7 @@ function AdminBlogSection() {
           </section>
         </div>
       </section>
-    </article> : <article className="admin-editor">
+    </article> : adminView === 'algo' ? <article className="admin-editor">
       <div className="admin-head-row">
         <div>
           <p className="eyebrow">ALGO NOTE</p>
@@ -755,6 +783,34 @@ function AdminBlogSection() {
       <div className="admin-actions">
         <button className="primary" onClick={() => saveAlgoNote().catch(error => setMessage(error instanceof Error ? error.message : '儲存失敗'))}>儲存 Algo 筆記</button>
         {selectedAlgoNote && <button className="danger" onClick={() => deleteAlgoNote().catch(error => setMessage(error instanceof Error ? error.message : '刪除失敗'))}>刪除</button>}
+        <button className="secondary" onClick={() => { localStorage.removeItem('exactlyone_admin_token'); setToken('') }}>登出</button>
+      </div>
+      {message && <p className="admin-message">{message}</p>}
+    </article> : <article className="admin-editor">
+      <div className="admin-head-row">
+        <div>
+          <p className="eyebrow">MODERATION</p>
+          <h2>Comments</h2>
+        </div>
+        <button className="secondary" onClick={() => loadModeration().catch(error => setMessage(error instanceof Error ? error.message : '留言載入失敗'))}>重新整理</button>
+      </div>
+      <section className="moderation-list">
+        {moderationComments.length === 0 && <p className="comment-empty">目前沒有留言。</p>}
+        {moderationComments.map(item => <article className={item.status === 'hidden' ? 'moderation-item hidden' : 'moderation-item'} key={`${item.source}-${item.id}`}>
+          <div className="moderation-meta">
+            <span>{item.source.toUpperCase()} · {item.status}</span>
+            <small>{item.targetLabel} · {item.createdAt}</small>
+          </div>
+          <h3>{item.displayName}</h3>
+          <p>{item.body}</p>
+          <div className="admin-actions">
+            {item.status === 'published'
+              ? <button className="danger" onClick={() => updateModerationStatus(item, 'hidden').catch(error => setMessage(error instanceof Error ? error.message : '更新失敗'))}>隱藏</button>
+              : <button className="secondary" onClick={() => updateModerationStatus(item, 'published').catch(error => setMessage(error instanceof Error ? error.message : '更新失敗'))}>恢復</button>}
+          </div>
+        </article>)}
+      </section>
+      <div className="admin-actions">
         <button className="secondary" onClick={() => { localStorage.removeItem('exactlyone_admin_token'); setToken('') }}>登出</button>
       </div>
       {message && <p className="admin-message">{message}</p>}

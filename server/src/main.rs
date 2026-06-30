@@ -180,6 +180,43 @@ struct BlogCommentRow {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct ModerationComment {
+    id: Uuid,
+    source: String,
+    target_id: String,
+    target_label: String,
+    display_name: String,
+    body: String,
+    status: String,
+    created_at: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ModerationCommentsOutput {
+    comments: Vec<ModerationComment>,
+}
+
+#[derive(sqlx::FromRow)]
+struct ModerationCommentRow {
+    id: Uuid,
+    source: String,
+    target_id: String,
+    target_label: String,
+    display_name: String,
+    body: String,
+    status: String,
+    created_at: DateTime<Utc>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ModerationStatusInput {
+    status: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct BlogReactionSummary {
     reaction_type: String,
     count: i64,
@@ -441,6 +478,14 @@ async fn serve(config: Config, pool: PgPool) -> Result<()> {
         .route(
             "/api/admin/algo-notes/{problem_id}",
             put(upsert_admin_algo_note).delete(delete_admin_algo_note),
+        )
+        .route(
+            "/api/admin/moderation/comments",
+            get(list_admin_moderation_comments),
+        )
+        .route(
+            "/api/admin/moderation/comments/{source}/{id}",
+            put(update_admin_moderation_comment),
         )
         .route("/api/admin/media", post(upload_media))
         .nest_service(&config.media_public_path, ServeDir::new(&config.media_dir))
@@ -973,6 +1018,87 @@ async fn delete_admin_algo_note(
     Ok(StatusCode::NO_CONTENT)
 }
 
+async fn list_admin_moderation_comments(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<ModerationCommentsOutput>, ApiError> {
+    require_admin(&state, &headers).await?;
+    let rows = sqlx::query_as::<_, ModerationCommentRow>(
+        r#"
+        select *
+        from (
+          select
+            c.id,
+            'blog'::text as source,
+            p.slug as target_id,
+            p.title as target_label,
+            c.display_name,
+            c.body,
+            c.status,
+            c.created_at
+          from blog_comments c
+          join blog_posts p on p.id = c.post_id
+          union all
+          select
+            c.id,
+            'algo'::text as source,
+            c.problem_id as target_id,
+            c.problem_id as target_label,
+            c.display_name,
+            c.body,
+            c.status,
+            c.created_at
+          from algo_comments c
+        ) comments
+        order by created_at desc
+        limit 200
+        "#,
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+
+    Ok(Json(ModerationCommentsOutput {
+        comments: rows.into_iter().map(to_moderation_comment).collect(),
+    }))
+}
+
+async fn update_admin_moderation_comment(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path((source, id)): Path<(String, Uuid)>,
+    Json(input): Json<ModerationStatusInput>,
+) -> Result<StatusCode, ApiError> {
+    require_admin(&state, &headers).await?;
+    if !is_comment_status(&input.status) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "invalid_status"));
+    }
+
+    let result = match source.as_str() {
+        "blog" => {
+            sqlx::query("update blog_comments set status = $2 where id = $1")
+                .bind(id)
+                .bind(&input.status)
+                .execute(&state.pool)
+                .await
+        }
+        "algo" => {
+            sqlx::query("update algo_comments set status = $2 where id = $1")
+                .bind(id)
+                .bind(&input.status)
+                .execute(&state.pool)
+                .await
+        }
+        _ => return Err(ApiError::new(StatusCode::BAD_REQUEST, "invalid_source")),
+    }
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "server_error"))?;
+
+    if result.rows_affected() == 0 {
+        return Err(ApiError::new(StatusCode::NOT_FOUND, "not_found"));
+    }
+    Ok(StatusCode::NO_CONTENT)
+}
+
 async fn published_post_id(pool: &PgPool, slug: &str) -> Result<Uuid, ApiError> {
     let row: Option<(Uuid,)> = sqlx::query_as(
         "select id from blog_posts where slug = $1 and status = 'published' limit 1",
@@ -1143,6 +1269,19 @@ fn to_comment(row: BlogCommentRow) -> BlogComment {
     }
 }
 
+fn to_moderation_comment(row: ModerationCommentRow) -> ModerationComment {
+    ModerationComment {
+        id: row.id,
+        source: row.source,
+        target_id: row.target_id,
+        target_label: row.target_label,
+        display_name: row.display_name,
+        body: row.body,
+        status: row.status,
+        created_at: row.created_at.format("%Y-%m-%d %H:%M").to_string(),
+    }
+}
+
 fn clean_display_name(value: Option<&str>) -> Result<String, ApiError> {
     let name = value.unwrap_or("").trim();
     if name.chars().count() > 80 {
@@ -1167,6 +1306,10 @@ fn clean_comment_body(value: &str) -> Result<String, ApiError> {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "comment_too_long"));
     }
     Ok(body.to_string())
+}
+
+fn is_comment_status(value: &str) -> bool {
+    matches!(value, "published" | "hidden")
 }
 
 fn clean_anonymous_key(value: &str) -> Result<String, ApiError> {
@@ -1719,6 +1862,14 @@ mod tests {
                 .code,
             "invalid_anonymous_key"
         );
+    }
+
+    #[test]
+    fn validates_comment_moderation_status() {
+        assert!(is_comment_status("published"));
+        assert!(is_comment_status("hidden"));
+        assert!(!is_comment_status("draft"));
+        assert!(!is_comment_status(""));
     }
 
     #[test]

@@ -71,6 +71,8 @@ This file is a public-safe product record.
   practice, category index, and multi-tag index.
 - Added first server-side public interaction rate limiting for Blog and Algo
   comments/reactions.
+- Added the first owner moderation tools for Blog and Algo comments, including
+  admin listing plus hide/restore controls.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

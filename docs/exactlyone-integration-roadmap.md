@@ -90,11 +90,12 @@ Current security and interaction state:
 - Public comment and reaction APIs exist for published posts.
 - First server-side public interaction rate limit exists for comments and
   reactions.
+- Owner moderation tools exist for hiding and restoring comments.
 
 Next requirements:
 
-- Public-safe moderation tools.
 - Better Markdown rendering and image handling.
+- Bulk moderation actions and audit history.
 
 ### Algo Lab
 
@@ -113,11 +114,12 @@ Current state:
 - Admin API endpoints exist for listing, upserting, and deleting problem notes.
 - Admin UI exists for editing, previewing, publishing, and deleting problem
   notes.
+- Owner moderation tools exist for hiding and restoring problem comments.
 
 Next requirements:
 
 - Deeper per-track study plans, progress markers, and recommended order.
-- Moderation tools for problem comments/reactions.
+- Bulk moderation actions and reaction-abuse review.
 
 ### Helios
 
@@ -209,7 +211,7 @@ Status: partially implemented.
 - Optional TOTP setup, enable, disable, and login verification exist.
 - Public comments and reactions exist for published blog posts.
 - First server-side public interaction rate limit exists.
-- Moderation boundary remains.
+- Owner moderation tools exist for comments.
 
 ### M3: Algo Lab Integration
 

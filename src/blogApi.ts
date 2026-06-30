@@ -49,6 +49,20 @@ export type BlogInteractions = {
   reactions: BlogReactionSummary[]
 }
 
+export type ModerationSource = 'blog' | 'algo'
+export type ModerationStatus = 'published' | 'hidden'
+
+export type ModerationComment = {
+  id: string
+  source: ModerationSource
+  targetId: string
+  targetLabel: string
+  displayName: string
+  body: string
+  status: ModerationStatus
+  createdAt: string
+}
+
 export type AlgoProblemNote = {
   id: string
   problemId: string
@@ -212,5 +226,25 @@ export async function deleteAdminAlgoNote(token: string, problemId: string) {
   await requestJson<void>(`/api/admin/algo-notes/${encodeURIComponent(problemId)}`, {
     method: 'DELETE',
     headers: { authorization: `Bearer ${token}` },
+  })
+}
+
+export async function fetchAdminModerationComments(token: string) {
+  const data = await requestJson<{ comments: ModerationComment[] }>('/api/admin/moderation/comments', {
+    headers: { authorization: `Bearer ${token}` },
+  })
+  return data.comments
+}
+
+export async function updateAdminModerationComment(
+  token: string,
+  source: ModerationSource,
+  id: string,
+  status: ModerationStatus,
+) {
+  await requestJson<void>(`/api/admin/moderation/comments/${source}/${id}`, {
+    method: 'PUT',
+    headers: { authorization: `Bearer ${token}` },
+    body: JSON.stringify({ status }),
   })
 }
