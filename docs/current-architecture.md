@@ -56,6 +56,8 @@ Public architecture snapshot for the ExactlyOne website.
 - ExactlyOne Blog-first home page with major public section entry cards.
 - Public Helios section shell with private-operation boundary copy.
 - Public Easy DB section shell with Easy PG as the PostgreSQL-focused tool.
+- Easy DB public schema-browser surface with sanitized example tables, column
+  search, relationship hints, workflow notes, and private-operation boundary.
 - Algo Lab search and filtering.
 - Tutorial selection by problem title, number, and tags.
 - Whiteboard-style dry-run steps.
@@ -84,15 +86,14 @@ Public architecture snapshot for the ExactlyOne website.
   reactions, admin note UI, track hierarchy, and full-width complete solutions.
   Moderation tools are still planned.
 - Helios: public research page and future authenticated operational dashboards
-  sourced from `/Users/cash/work_space/private/Helios`.
-- Easy DB: database tooling page sourced from
-  `/Users/cash/work_space/private/easy-pg`, with public docs/examples and
-  authenticated real connection operations.
+  sourced from the private Helios project.
+- Easy DB: database tooling page sourced from the Easy PG app, with public
+  docs/examples and authenticated real connection operations.
 
 ## External Source Repositories
 
-- Helios: `/Users/cash/work_space/private/Helios`.
-- Easy DB / Easy PG: `/Users/cash/work_space/private/easy-pg`.
+- Helios: private Helios project.
+- Easy DB / Easy PG: private Easy PG project.
 
 External source repos are not automatically part of the production build. Add an
 adapter, export, or copied module only after defining the public/private

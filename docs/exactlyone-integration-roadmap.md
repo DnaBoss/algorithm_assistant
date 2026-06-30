@@ -18,8 +18,8 @@ operations behind authenticated boundaries.
 | --- | --- | --- | --- |
 | Blog | Public writing for study, work, graduate-exam prep, side projects, and project notes | Admin authoring, drafts, publish flow, backups | This repo |
 | Algo Lab | Public algorithm learning, dry-runs, solutions, tracks | Owner notes per problem, future comments and reactions | This repo |
-| Helios | Public quant/trading research notes and selected dashboards | Market-data state, ingestion status, experiments, operational dashboards | `/Users/cash/work_space/private/Helios` |
-| Easy DB | Public browser-accessible database learning/tooling surface | Safe schema export, query notes, connection profiles, admin-only DB operations | `/Users/cash/work_space/private/easy-pg` |
+| Helios | Public quant/trading research notes and selected dashboards | Market-data state, ingestion status, experiments, operational dashboards | Private Helios source |
+| Easy DB | Public browser-accessible database learning/tooling surface | Safe schema export, query notes, connection profiles, admin-only DB operations | Private Easy PG source |
 
 ## Non-Negotiables
 
@@ -119,7 +119,7 @@ Next requirements:
 
 Current source:
 
-- Repo path: `/Users/cash/work_space/private/Helios`.
+- Private Helios source repo.
 - Rust workspace with Docker Compose and frontend assets.
 - Known domain knowledge includes market-data ingestion, kbar collection state,
   gap scans, TXF pipeline status, and provider validation.
@@ -146,18 +146,21 @@ Safety boundary:
 
 Current source:
 
-- Repo path: `/Users/cash/work_space/private/easy-pg`.
+- Private Easy PG source repo.
 - Rust app with web UI, Dockerfile, Docker Compose, profiles, and schema export
   artifacts.
+- ExactlyOne now has a public Easy DB schema-browser surface using sanitized
+  example tables and private-operation boundary copy.
 
 Integration plan:
 
 - Phase 1: rename all public copy to Easy DB or Easy PG consistently. Preferred
   public section label: Easy DB. Tool label may remain Easy PG if the exact
-  feature is PostgreSQL-specific. Initial shell exists in this branch.
+  feature is PostgreSQL-specific. Public schema-browser example exists in this
+  branch.
 - Phase 2: embed or reimplement the public landing and schema-view workflow in
-  ExactlyOne.
-- Phase 3: authenticated connection-profile management.
+  ExactlyOne using sanitized exports from Easy PG.
+- Phase 3: authenticated connection-profile management and live schema export.
 - Phase 4: safe query notes and export-to-post workflow.
 
 Safety boundary:
@@ -217,9 +220,12 @@ Status: partially implemented.
 
 Status: partially implemented.
 
-- Confirm whether to integrate by iframe, reverse proxy, shared Rust module, or
-  reimplementation.
-- Public Easy DB shell exists.
+- Public Easy DB schema-browser example exists.
+- Safe public/private boundary is represented in the UI.
+- Source Easy PG capabilities were reviewed: profiles, SSH tunnel, schema
+  snapshot, column search, SQL import, and schema export.
+- Need decide whether live private operations use iframe, reverse proxy, shared
+  Rust module, or reimplementation.
 - Needs authenticated admin-only operations.
 
 ### M5: Helios Integration
@@ -289,6 +295,9 @@ Status: partially designed.
 - Added the first `/admin` Algo problem-note editor with Blog/Algo admin tabs,
   problem selection, Markdown editing, live preview, draft/published state,
   save, and delete.
+- Reworked Easy DB from a placeholder into a public schema-browser example with
+  searchable sanitized tables, relation hints, workflow notes, and explicit
+  private-operation boundaries.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.

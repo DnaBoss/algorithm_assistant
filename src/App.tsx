@@ -30,6 +30,7 @@ import {
   type TotpSetup,
 } from './blogApi'
 import { blocksToMarkdown, estimateReadMinutes, markdownToBlocks } from './blogEditor'
+import { easyDbCapabilities, easyDbExampleSchema, easyDbWorkflow, filterEasyDbTables } from './easyDbData'
 import { tutorials, type SolutionLanguage, type Step, type Tutorial } from './tutorialData'
 import { problemNumberFor, searchTutorials } from './search'
 
@@ -57,17 +58,6 @@ const siteSections: Array<{ id: SiteSection; label: string; eyebrow: string; tit
   { id: 'algoLab', label: 'Algo Lab', eyebrow: 'ALGO LAB', title: 'Algo Lab', summary: '算法題目、思路講解與 dry-run。', status: '已開放' },
   { id: 'easyDb', label: 'Easy DB', eyebrow: 'DATABASE', title: 'Easy DB', summary: 'PostgreSQL schema、查詢筆記與資料庫學習工具。', status: '規劃中' },
   { id: 'blog', label: '個人 blog', eyebrow: 'BLOG', title: '個人 blog', summary: '文章與公開記錄。', status: '準備中' },
-]
-
-const easyDbTools = [
-  {
-    id: 'easy-pg',
-    label: 'DATABASE',
-    title: 'Easy DB / Easy PG',
-    status: '規劃中',
-    summary: 'PostgreSQL schema、查詢筆記和資料庫學習工具。',
-    points: ['Schema browser', 'Query notes', 'PostgreSQL learning'],
-  },
 ]
 
 const quantPanels = [
@@ -156,42 +146,91 @@ function ProjectPlaceholder({ section }: { section: Exclude<SiteSection, 'home' 
 }
 
 function EasyDbSection() {
+  const [schemaQuery, setSchemaQuery] = useState('')
+  const [selectedTableName, setSelectedTableName] = useState(easyDbExampleSchema[0].name)
+  const visibleTables = filterEasyDbTables(easyDbExampleSchema, schemaQuery)
+  const selectedTable = visibleTables.find(table => table.name === selectedTableName) ?? visibleTables[0] ?? easyDbExampleSchema[0]
+  const relationCount = easyDbExampleSchema.flatMap(table => table.columns).filter(column => column.foreign).length
+
+  const selectTable = (name: string) => {
+    setSelectedTableName(name)
+  }
+
   return <section className="tools-shell">
     <div className="tools-head">
       <p className="eyebrow">EASY DB</p>
       <h1>Easy DB</h1>
-      <p>資料庫工具會先以 PostgreSQL 為核心，公開文件與範例，真正的連線與查詢操作只會放在登入後的安全邊界內。</p>
+      <p>PostgreSQL schema browser、欄位搜尋與查詢筆記整理。公開頁只放安全範例與流程；真實 connection profiles、SSH tunnel、SQL import/export 和資料查詢留在登入後。</p>
     </div>
 
-    <div className="tools-grid">
-      {easyDbTools.map(tool => <article key={tool.id} className="tool-card">
+    <div className="tool-metrics" aria-label="Easy DB metrics">
+      <div><b>{easyDbExampleSchema.length}</b><span>example tables</span></div>
+      <div><b>{easyDbExampleSchema.reduce((sum, table) => sum + table.columns.length, 0)}</b><span>columns</span></div>
+      <div><b>{relationCount}</b><span>relations</span></div>
+    </div>
+
+    <div className="tools-grid capability-grid">
+      {easyDbCapabilities.map(tool => <article key={tool.title} className="tool-card">
         <span>{tool.label}</span>
         <div className="tool-title-row">
           <h2>{tool.title}</h2>
-          <b>{tool.status}</b>
         </div>
         <p>{tool.summary}</p>
-        <div className="tool-points">
-          {tool.points.map(point => <em key={point}>{point}</em>)}
-        </div>
       </article>)}
     </div>
 
-    <div className="easy-pg-plan">
+    <div className="schema-browser">
+      <aside>
+        <div className="schema-browser-head">
+          <span>SCHEMA</span>
+          <b>public example</b>
+        </div>
+        <label className="schema-search">
+          <span>搜尋 table / column</span>
+          <input value={schemaQuery} onChange={event => { setSchemaQuery(event.target.value); setSelectedTableName('') }} placeholder="例：owner_id、users、jsonb" />
+        </label>
+        <div className="schema-table-list">
+          {visibleTables.map(table => <button key={table.name} className={selectedTable.name === table.name ? 'active' : ''} onClick={() => selectTable(table.name)}>
+            <span>{table.schema}</span>
+            <b>{table.name}</b>
+            <small>{table.columns.length} columns</small>
+          </button>)}
+        </div>
+        {visibleTables.length === 0 && <p className="schema-empty">沒有符合條件的 table。</p>}
+      </aside>
+      <article>
+        <div className="schema-selected-head">
+          <div>
+            <span>{selectedTable.schema}</span>
+            <h2>{selectedTable.name}</h2>
+          </div>
+          <p>{selectedTable.purpose}</p>
+        </div>
+        <div className="column-table">
+          <div className="column-row header"><span>Column</span><span>Type</span><span>Key</span><span>Note</span></div>
+          {selectedTable.columns.map(column => <div className="column-row" key={column.name}>
+            <span><b>{column.name}</b>{!column.nullable && <em>not null</em>}</span>
+            <span>{column.type}</span>
+            <span>{column.primary ? 'PK' : column.foreign ? `FK -> ${column.foreign.table}.${column.foreign.column}` : '-'}</span>
+            <span>{column.note}</span>
+          </div>)}
+        </div>
+      </article>
+    </div>
+
+    <div className="easy-pg-plan easy-db-workflow">
       <section>
-        <h3>Easy DB / Easy PG</h3>
+        <h3>Workflow</h3>
         <ol>
-          <li>Schema browsing</li>
-          <li>Query notes</li>
-          <li>PostgreSQL learning</li>
+          {easyDbWorkflow.map(item => <li key={item}>{item}</li>)}
         </ol>
       </section>
       <section>
-        <h3>狀態</h3>
+        <h3>Boundary</h3>
         <ol>
-          <li>來源工具：/Users/cash/work_space/private/easy-pg</li>
-          <li>公開頁只放文件與範例</li>
-          <li>實際連線操作需要登入</li>
+          <li>公開頁不保存、不顯示真實 host、帳號、密碼或資料列。</li>
+          <li>Schema export 可以轉成文章或查詢筆記。</li>
+          <li>真實 DB 操作只放在 owner admin 內。</li>
         </ol>
       </section>
     </div>
@@ -931,7 +970,7 @@ function HeliosSection() {
         <section>
           <h3>狀態</h3>
           <ol>
-            <li>來源 repo：/Users/cash/work_space/private/Helios</li>
+            <li>來源：private Helios project</li>
             <li>先接只讀摘要，再談 live adapter</li>
             <li>私有操作需要登入</li>
           </ol>

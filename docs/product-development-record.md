@@ -57,6 +57,9 @@ This file is a public-safe product record.
 - Added the first Algo Lab personal-note and community layer: problem notes by
   problem id, public comments, and browser-local reactions.
 - Added the first admin editor for Algo Lab problem notes.
+- Reworked Easy DB into a public PostgreSQL schema-browser example with
+  searchable tables, column metadata, relation hints, and private-operation
+  boundaries.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene
@@ -73,8 +76,8 @@ open until:
 - Blog is the actual homepage and supports owner-managed content.
 - Algo Lab is one section with personal notes, full-width complete solutions,
   and planned public interaction surfaces.
-- Easy DB is integrated from `/Users/cash/work_space/private/easy-pg` behind
-  safe public/admin boundaries.
-- Helios is integrated from `/Users/cash/work_space/private/Helios` with public
-  research pages and private operational boundaries.
+- Easy DB is integrated from the private Easy PG source behind safe public/admin
+  boundaries.
+- Helios is integrated from the private Helios source with public research pages
+  and private operational boundaries.
 - Production deployment path and backup/restore process are verified.
