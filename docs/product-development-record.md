@@ -86,6 +86,8 @@ This file is a public-safe product record.
 - Added local candidate review and promote tooling for platform export changes.
 - Added an owner-only Platform admin workbench for reviewing the current
   generated Helios and Easy DB export summaries from the site admin surface.
+- Added platform export review warnings, JSON review output, and default
+  promotion protection against likely public export regressions.
 - Preserved the in-progress ExactlyOne platform work under
   `feature/exactlyone-platform-integration`.
 - Removed the old temporary remote branch and continued branch hygiene

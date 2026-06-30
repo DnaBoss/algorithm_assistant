@@ -152,7 +152,24 @@ npm run review:platform-export
 ```
 
 `npm run check:platform-exports` also runs the Easy PG and Helios sanitizer
-self-tests.
+self-tests, plus the platform export review self-test.
+
+The review tool prints a current-vs-candidate report and flags likely
+regressions such as older export dates, removed Helios signals, removed Helios
+datasets, removed Easy DB tables, or reduced Easy DB column counts:
+
+```bash
+npm run review:platform-export
+node scripts/review-platform-export.mjs --fail-on-regression
+node scripts/review-platform-export.mjs --json .platform-local/platform-review.local.json
+```
+
+Promotion refuses regression warnings by default. Use an explicit override only
+after deliberately accepting the reduced public export:
+
+```bash
+node scripts/review-platform-export.mjs --promote --allow-regression
+```
 
 When the candidate report is acceptable, promote it into the frontend bundle:
 

@@ -47,8 +47,8 @@ Public architecture snapshot for the ExactlyOne website.
 - `scripts/import-platform-exports.mjs`: validates and normalizes Helios/Easy
   DB public export bundles before they are committed to the frontend.
 - `scripts/review-platform-export.mjs`: validates a local candidate bundle,
-  prints a current-vs-candidate summary, and can promote the candidate after
-  review.
+  prints a current-vs-candidate summary, emits optional JSON review reports,
+  flags likely export regressions, and can promote the candidate after review.
 - `scripts/easy-pg-schema-to-platform-export.mjs`: converts Easy PG schema
   exports into the platform export bundle using an explicit public table
   allow-list or git-ignored local allow-list file.
@@ -98,6 +98,8 @@ Public architecture snapshot for the ExactlyOne website.
   by git.
 - Source-derived Helios/Easy DB changes should first produce a local candidate
   bundle, then pass review/promote before changing `src/platformExports.generated.json`.
+  Candidate promotion refuses likely public export regressions unless the
+  reduction is explicitly accepted.
 - Algo Lab search and filtering.
 - Algo Lab track hierarchy with Blind 75, Top 150, rating-based practice,
   category index, and multi-tag index pages.

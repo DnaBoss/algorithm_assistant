@@ -73,6 +73,8 @@ Adapter boundary rule:
   they are committed into `src/platformExports.generated.json`.
 - Candidate export bundles should be reviewed with
   `npm run review:platform-export` before they are promoted.
+- Candidate review can emit a git-ignored JSON report and refuses likely public
+  export regressions by default during promotion.
 - Helios public status summaries must pass
   `scripts/helios-status-to-platform-export.mjs` before they update the public
   Helios bundle.
@@ -263,6 +265,8 @@ Status: partially implemented.
 - Local Easy PG import workflow exists through `.platform-local/` and
   `npm run import:easy-pg-schema`.
 - Platform export review/promote workflow exists for local candidate bundles.
+- Platform export review now flags likely regressions before promotion, such as
+  removed Helios signals/datasets or reduced Easy DB schema coverage.
 - Owner admin has a Platform workbench showing the current generated Easy DB
   export date, table count, column count, and public table list.
 - Need decide whether live private operations use iframe, reverse proxy, shared
@@ -281,6 +285,8 @@ Status: partially implemented.
 - Helios status-to-platform sanitizer exists.
 - Owner admin has a Platform workbench showing the current generated Helios
   export date, signal count, dataset count, and dataset gates.
+- Platform export review now catches candidates that would reduce the public
+  Helios status surface before promotion.
 - Define private operational dashboard.
 - Generate the first source-derived sanitized status export from Helios into
   this contract.
@@ -378,6 +384,8 @@ Status: partially implemented.
 - Added candidate review/promote tooling for platform exports.
 - Added an owner-only Platform admin workbench that summarizes the current
   generated Helios and Easy DB exports before deployment decisions.
+- Added machine-readable platform export review reports and default promotion
+  protection against likely public export regressions.
 - Verified local PostgreSQL migration through `npm run db:migrate`; the
   `admin_users` table has `password_changed_at`, `totp_secret`, and
   `totp_enabled`.
